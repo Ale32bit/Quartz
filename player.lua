@@ -193,7 +193,7 @@ addTask(function()
         local ev = { os.pullEvent() }
         if ev[1] == "disk" and ev[2] == peripheral.getName(drive) then
             -- This event is fired on startup, somehow, without interacting with the drive
-            if os.clock() > 0.1 then
+            if os.clock() > 1 then
                 loadDriver()
             end
         elseif ev[1] == "disk_eject" then
