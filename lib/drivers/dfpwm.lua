@@ -85,7 +85,7 @@ end
 
 function Track:stop()
     self.state = "paused"
-    self.handle.seek("set", 0)
+    pcall(self.handle.seek, "set", 0)
     os.queueEvent("quartz_pause")
     stopAudio(self.speakers)
 end
