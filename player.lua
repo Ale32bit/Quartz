@@ -7,7 +7,7 @@
     https://github.com/Ale32bit/Quartz/blob/main/LICENSE
 ]]
 
-print("Quartz Player 0.0.2")
+print("Quartz Player 0.0.3")
 
 
 settings.define("quartz.right", {
@@ -28,6 +28,30 @@ settings.define("quartz.drivers", {
     type = "string",
 })
 
+settings.define("quartz.autoplay", {
+    description = "Autoplay the track on start",
+    default = true,
+    type = "boolean",
+})
+
+settings.define("quartz.volume", {
+    description = "Default audio volume. Range: 0.0 - 1.0",
+    default = 1,
+    type = "number"
+})
+
+settings.define("quartz.distance", {
+    description = "Default audio distance. Range: 0 - 128",
+    default = 1,
+    type = "number"
+})
+
+settings.define("quartz.loop", {
+    description = "Restart track when it ends",
+    default = true,
+    type = "boolean"
+})
+
 local drive = peripheral.find("drive")
 
 if not drive then
@@ -42,8 +66,8 @@ local speakers = {
 speakers.left = speakers.left or speakers.right
 speakers.right = speakers.right or speakers.left
 speakers.isMono = speakers.left == speakers.right
-speakers.volume = 1
-speakers.distance = 1
+speakers.volume = settings.get("quartz.volume")
+speakers.distance = settings.get("quartz.distance")
 
 if not speakers.left and not speakers.right then
     error("Speakers not found", 0)
@@ -105,7 +129,7 @@ local function loadTrack(tr)
     trackMeta = track:getMeta()
 
     print(string.format("[%s] Loaded track: %s - %s (%s)", track.type, trackMeta.artist, trackMeta.title, trackMeta
-    .album))
+        .album))
 
     trackPid = addTask(function()
         track:run()
@@ -115,13 +139,51 @@ local function loadTrack(tr)
 end
 
 local function setVolume(vol)
+    if vol > 1 then
+        vol = 1
+    end
+    if vol < 0 then
+        vol = 0
+    end
     speakers.volume = vol
     os.queueEvent("quartz_volume", vol)
 end
 
 local function setDistance(dist)
+    if dist > 128 then
+        dist = 128
+    end
+    if dist < 0 then
+        dist = 0
+    end
     speakers.distance = dist
     os.queueEvent("quartz_distance", dist)
+end
+
+local function loadDriver()
+    local compatibleDrivers = {}
+
+    for _, driver in pairs(drivers) do
+        local isCompatible, weight = driver.checkCompatibility(drive)
+        if isCompatible then
+            table.insert(compatibleDrivers, {
+                driver = driver,
+                weight = weight,
+            })
+        end
+    end
+
+    table.sort(compatibleDrivers, function(a, b)
+        return a.weight > b.weight
+    end)
+
+    local comp = compatibleDrivers[1]
+    if comp then
+        local track = comp.driver.new(drive, speakers)
+        loadTrack(track)
+    else
+        printError("No eligible driver found")
+    end
 end
 
 addTask(function()
@@ -129,36 +191,22 @@ addTask(function()
     while true do
         local ev = { os.pullEvent() }
         if ev[1] == "disk" and ev[2] == peripheral.getName(drive) then
-            local compatibleDrivers = {}
-
-            for _, driver in pairs(drivers) do
-                local isCompatible, weight = driver.checkCompatibility(drive)
-                if isCompatible then
-                    table.insert(compatibleDrivers, {
-                        driver = driver,
-                        weight = weight,
-                    })
-                end
-            end
-
-            table.sort(compatibleDrivers, function(a, b)
-                return a.weight > b.weight
-            end)
-
-            local comp = compatibleDrivers[1]
-            if comp then
-                local track = comp.driver.new(drive, speakers)
-                loadTrack(track)
-            else
-                printError("No eligible driver found")
-            end
+            loadDriver()
         elseif ev[1] == "disk_eject" then
             stop(true)
+        elseif ev[1] == "quartz_driver_end" then
+            if settings.get("quartz.loop") then
+                stop()
+                play()
+            end
         end
     end
 end)
 
 addTask(function()
+    if settings.get("quartz.autoplay") then
+        loadDriver()
+    end
 
     print("CONTROLS")
     print(" - SPACE: Play/Pause")
@@ -174,8 +222,8 @@ addTask(function()
         local ev = { os.pullEvent() }
         if ev[1] == "key" then
             local key = ev[2]
-            if track then
-                if key == keys.space then
+            if key == keys.space then
+                if track then
                     if track:getState() == "paused" then
                         print("Play")
                         track:play()
@@ -183,48 +231,42 @@ addTask(function()
                         print("Pause")
                         track:pause()
                     end
-                elseif key == keys.s then
+                else
+                    loadDriver()
+                end
+            elseif key == keys.s then
+                if track then
                     print("Stop")
                     track:stop()
-                elseif key == keys.right then
+                end
+            elseif key == keys.right then
+                if track then
                     print("Forward 5 seconds")
                     local pos = track:getPosition()
                     track:setPosition(pos + 5)
-                elseif key == keys.left then
+                end
+            elseif key == keys.left then
+                if track then
                     print("Backward 5 seconds")
                     local pos = track:getPosition()
                     track:setPosition(pos - 5)
-                elseif key == keys.up then
-                    local volume = speakers.volume + 0.05
-                    if volume > 1 then
-                        volume = 1
-                    end
-                    setVolume(volume)
-                    print("Volume:", speakers.volume * 100)
-                elseif key == keys.down then
-                    local volume = speakers.volume - 0.05
-                    if volume < 0 then
-                        volume = 0
-                    end
-                    setVolume(volume)
-                    print("Volume:", speakers.volume * 100)
-                elseif key == keys.pageUp then
-                    local distance = speakers.distance + 1
-                    if distance > 128 then
-                        distance = 128
-                    end
-
-                    setDistance(distance)
-                    print("Distance:", speakers.distance)
-                elseif key == keys.pageDown then
-                    local distance = speakers.distance - 1
-                    if distance < 0 then
-                        distance = 0
-                    end
-
-                    setDistance(distance)
-                    print("Distance:", speakers.distance)
                 end
+            elseif key == keys.up then
+                local volume = speakers.volume + 0.05
+                setVolume(volume)
+                print("Volume:", speakers.volume * 100)
+            elseif key == keys.down then
+                local volume = speakers.volume - 0.05
+                setVolume(volume)
+                print("Volume:", speakers.volume * 100)
+            elseif key == keys.pageUp then
+                local distance = speakers.distance + 1
+                setDistance(distance)
+                print("Distance:", speakers.distance)
+            elseif key == keys.pageDown then
+                local distance = speakers.distance - 1
+                setDistance(distance)
+                print("Distance:", speakers.distance)
             end
         end
     end
