@@ -124,7 +124,13 @@ end
 
 local function new(drive, speakers)
     local drivePath = drive.getMountPath()
-    local handle = fs.open(fs.combine(drivePath, "audio.mdfpwm"), "rb")
+    local found = fs.find(fs.combine(drivePath, "*.mdfpwm"))
+    local filePath = found[1]
+    if not filePath then
+        error("No compatible files!")
+    end
+
+    local handle = fs.open(filePath, "rb")
     local audio = mdfpwm.parse(handle)
 
     local track = {
@@ -152,10 +158,8 @@ local function checkCompatibility(drive)
     end
 
     local path = drive.getMountPath()
-    if fs.exists(fs.combine(path, "audio.mdfpwm")) then
-        return true, 10
-    end
-    return false
+    local found = fs.find(fs.combine(path, "*.mdfpwm"))
+    return #found > 0, 10
 end
 
 return {
