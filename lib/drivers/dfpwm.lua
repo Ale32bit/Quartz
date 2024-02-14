@@ -34,6 +34,7 @@ function Track:run()
         end
         local chunk = self.handle.read(self.blockSize)
         if not chunk then
+            os.queueEvent("quartz_driver_end")
             break
         end
 
@@ -43,8 +44,6 @@ function Track:run()
             sleep(0.5)
         end
     end
-
-    os.queueEvent("quartz_driver_end")
 end
 
 function Track:getMeta()
@@ -120,7 +119,7 @@ local function new(drive, speakers)
         disposed = false,
     }
 
-    setmetatable(track, {__index = Track})
+    setmetatable(track, { __index = Track })
     return track
 end
 

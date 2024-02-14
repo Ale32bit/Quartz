@@ -64,6 +64,7 @@ function Track:run()
         end
         local sample = self.audio.getSample(self.index)
         if not sample then
+            os.queueEvent("quartz_driver_end")
             break
         end
         local decoded = {
@@ -76,7 +77,6 @@ function Track:run()
         end
         self.index = self.index + 1
     end
-    os.queueEvent("quartz_driver_end")
 end
 
 function Track:getMeta()

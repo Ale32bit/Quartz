@@ -115,6 +115,7 @@ local function stop(dispose)
         track:stop()
         if dispose then
             print("Disposing playback")
+            track = nil
             pcall(function() track:dispose() end)
             killTask(trackPid)
         end
@@ -196,7 +197,6 @@ addTask(function()
             stop(true)
         elseif ev[1] == "quartz_driver_end" then
             if settings.get("quartz.loop") then
-                stop(true)
                 loadDriver()
             end
         end
