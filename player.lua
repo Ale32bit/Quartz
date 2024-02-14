@@ -192,7 +192,10 @@ addTask(function()
     while true do
         local ev = { os.pullEvent() }
         if ev[1] == "disk" and ev[2] == peripheral.getName(drive) then
-            loadDriver()
+            -- This event is fired on startup, somehow, without interacting with the drive
+            if os.clock() > 0.1 then
+                loadDriver()
+            end
         elseif ev[1] == "disk_eject" then
             stop(true)
         elseif ev[1] == "quartz_driver_end" then
