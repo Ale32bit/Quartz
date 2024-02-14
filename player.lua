@@ -4,7 +4,7 @@
     Quartz Player (c) 2024 AlexDevs
 ]]
 
-print("Quartz Player 0.0.1")
+print("Quartz Player 0.0.2")
 
 
 settings.define("quartz.right", {
