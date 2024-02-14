@@ -4,12 +4,19 @@ local driverType = "dfpwm"
 
 local Track = {}
 
+local function adjustVolume(buffer, volume)
+    for i = 1, #buffer do
+        buffer[i] = buffer[i] * volume
+    end
+end
+
 local function playAudio(speakers, sample)
+    adjustVolume(sample, speakers.volume)
     if speakers.isMono then
-        return speakers.left.playAudio(sample)
+        return speakers.left.playAudio(sample, speakers.distance)
     end
 
-    return speakers.left.playAudio(sample) and speakers.right.playAudio(sample)
+    return speakers.left.playAudio(sample, speakers.distance) and speakers.right.playAudio(sample, speakers.distance)
 end
 
 local function stopAudio(speakers)

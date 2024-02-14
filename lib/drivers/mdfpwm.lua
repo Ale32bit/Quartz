@@ -13,9 +13,17 @@ local function getAverage(left, right)
     return avg
 end
 
+local function adjustVolume(buffer, volume)
+    for i = 1, #buffer do
+        buffer[i] = buffer[i] * volume
+    end
+end
+
 local function playAudio(speakers, sample)
+    adjustVolume(sample.left, speakers.volume)
+    adjustVolume(sample.right, speakers.volume)
     if speakers.isMono then
-        return speakers.left.playAudio(getAverage(sample.left, sample.right))
+        return speakers.left.playAudio(getAverage(sample.left, sample.right), speakers.distance)
     end
 
     if #sample.left ~= #sample.right then
@@ -25,10 +33,10 @@ local function playAudio(speakers, sample)
 
     local ok = true
     if #sample.left > 0 then
-        ok = ok and speakers.left.playAudio(sample.left)
+        ok = ok and speakers.left.playAudio(sample.left, speakers.distance)
     end
     if #sample.right > 0 then
-        ok = ok and speakers.right.playAudio(sample.right)
+        ok = ok and speakers.right.playAudio(sample.right, speakers.distance)
     end
 
     return ok

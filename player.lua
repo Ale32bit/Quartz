@@ -39,6 +39,8 @@ local speakers = {
 speakers.left = speakers.left or speakers.right
 speakers.right = speakers.right or speakers.left
 speakers.isMono = speakers.left == speakers.right
+speakers.volume = 1
+speakers.distance = 1
 
 if not speakers.left and not speakers.right then
     error("Speakers not found", 0)
@@ -109,6 +111,16 @@ local function loadTrack(tr)
     play()
 end
 
+local function setVolume(vol)
+    speakers.volume = vol
+    os.queueEvent("quartz_volume", vol)
+end
+
+local function setDistance(dist)
+    speakers.distance = dist
+    os.queueEvent("quartz_distance", dist)
+end
+
 addTask(function()
     print("Ready")
     while true do
@@ -150,6 +162,10 @@ addTask(function()
     print(" - S: Stop")
     print(" - Right: Forward 5 seconds")
     print(" - Left: Backward 5 seconds")
+    print(" - Up: Volume up 1")
+    print(" - Down: Volume down 1")
+    print(" - PgUp: Distance up 1")
+    print(" - DgDn: Distance down 1")
 
     while true do
         local ev = { os.pullEvent() }
@@ -175,6 +191,36 @@ addTask(function()
                     print("Backward 5 seconds")
                     local pos = track:getPosition()
                     track:setPosition(pos - 5)
+                elseif key == keys.up then
+                    local volume = speakers.volume + 0.05
+                    if volume > 1 then
+                        volume = 1
+                    end
+                    setVolume(volume)
+                    print("Volume:", speakers.volume * 100)
+                elseif key == keys.down then
+                    local volume = speakers.volume - 0.05
+                    if volume < 0 then
+                        volume = 0
+                    end
+                    setVolume(volume)
+                    print("Volume:", speakers.volume * 100)
+                elseif key == keys.pageUp then
+                    local distance = speakers.distance + 1
+                    if distance > 128 then
+                        distance = 128
+                    end
+
+                    setDistance(distance)
+                    print("Distance:", speakers.distance)
+                elseif key == keys.pageDown then
+                    local distance = speakers.distance - 1
+                    if distance < 0 then
+                        distance = 0
+                    end
+
+                    setDistance(distance)
+                    print("Distance:", speakers.distance)
                 end
             end
         end
