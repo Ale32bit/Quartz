@@ -12,6 +12,8 @@
 
 local url, title, artist, album = ...
 
+print("WARNING: This tool is deprecated")
+
 if not url then
     error("Usage: url, title, artist, album", 0)
 end
