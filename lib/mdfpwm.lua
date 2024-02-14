@@ -1,7 +1,12 @@
--- MDFPWM parser library by AlexDevs
+--[[ 
+    MDFPWM parser library by AlexDevs
 
--- This library reads Drucifer's MDFPWMv3 files
--- Consider donating to Drucifer@SwitchCraft.kst for the format
+    MIT License
+    https://github.com/Ale32bit/Quartz/blob/main/LICENSE
+
+    This library reads Drucifer's MDFPWMv3 files
+    Consider donating to Drucifer@SwitchCraft.kst for the format
+]]
 
 local sub = string.sub
 local function verifyHeader(handle)

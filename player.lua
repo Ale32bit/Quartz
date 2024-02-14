@@ -1,7 +1,10 @@
 --[[
-    Quartz Player by AlexDevs
+    Quartz Player (c) AlexDevs
+    https://alexdevs.me
+    https://github.com/Ale32bit/Quartz
 
-    Quartz Player (c) 2024 AlexDevs
+    MIT License
+    https://github.com/Ale32bit/Quartz/blob/main/LICENSE
 ]]
 
 print("Quartz Player 0.0.2")
