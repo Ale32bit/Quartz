@@ -193,6 +193,7 @@ addTask(function()
         local ev = { os.pullEvent() }
         if ev[1] == "disk" and ev[2] == peripheral.getName(drive) then
             -- This event is fired on startup, somehow, without interacting with the drive
+            -- doesn't happen in later versions
             if os.clock() > 1 then
                 loadDriver()
             end
@@ -207,10 +208,6 @@ addTask(function()
 end)
 
 addTask(function()
-    if settings.get("quartz.autoplay") then
-        loadDriver()
-    end
-
     print("CONTROLS")
     print(" - SPACE: Play/Pause")
     print(" - S: Stop")
@@ -272,6 +269,13 @@ addTask(function()
                 print("Distance:", speakers.distance)
             end
         end
+    end
+end)
+
+addTask(function()
+    if settings.get("quartz.autoplay") then
+        sleep(1)
+        loadDriver()
     end
 end)
 
