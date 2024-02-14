@@ -128,8 +128,8 @@ local function loadTrack(tr)
     track = tr
     trackMeta = track:getMeta()
 
-    print(string.format("[%s] Loaded track: %s - %s (%s)", track.type, trackMeta.artist, trackMeta.title, trackMeta
-        .album))
+    print(string.format("[%s] Loaded track: %s - %s (%s)",
+        track.type, trackMeta.artist, trackMeta.title, trackMeta.album))
 
     trackPid = addTask(function()
         track:run()
@@ -196,8 +196,8 @@ addTask(function()
             stop(true)
         elseif ev[1] == "quartz_driver_end" then
             if settings.get("quartz.loop") then
-                stop()
-                play()
+                stop(true)
+                loadDriver()
             end
         end
     end
