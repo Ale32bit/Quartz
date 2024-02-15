@@ -7,7 +7,7 @@
     https://github.com/Ale32bit/Quartz/blob/main/LICENSE
 ]]
 
-print("Quartz Player 0.0.3")
+print("Quartz Player 0.0.4")
 
 
 settings.define("quartz.right", {
@@ -52,6 +52,20 @@ settings.define("quartz.loop", {
     type = "boolean"
 })
 
+local w, h = term.getSize()
+local current = term.current()
+local logWindow = window.create(current, 1, 1, w, h, true)
+local function log(...)
+    local oldTerm = term.redirect(logWindow)
+    print(...)
+    term.redirect(oldTerm)
+end
+local function logError(...)
+    local oldTerm = term.redirect(logWindow)
+    printError(...)
+    term.redirect(oldTerm)
+end
+
 local drive = peripheral.find("drive")
 
 if not drive then
@@ -73,9 +87,9 @@ if not speakers.left and not speakers.right then
     error("Speakers not found", 0)
 end
 
-print("Speaker configuration:", speakers.isMono and "mono" or "stereo")
+log("Speaker configuration:", speakers.isMono and "mono" or "stereo")
 
-print("Loading playback drivers...")
+log("Loading playback drivers...")
 
 local drivers = {}
 
@@ -85,7 +99,7 @@ for i, fileName in ipairs(fs.list(settings.get("quartz.drivers"))) do
 
     local driver = require(path)
     drivers[driver.type] = driver
-    print("Found driver:", driver.type)
+    log("Found driver:", driver.type)
 end
 
 local tasks = {}
@@ -105,18 +119,18 @@ local track
 local trackPid
 local trackMeta
 local function play()
-    print(string.format("Playing %s - %s", trackMeta.artist, trackMeta.title))
+    log(string.format("Playing %s - %s", trackMeta.artist, trackMeta.title))
     track:play()
 end
 
 local function stop(dispose)
     if track then
-        print("Stopping playback")
+        log("Stopping playback")
         track:stop()
         if dispose then
-            print("Disposing playback")
-            track = nil
+            log("Disposing playback")
             pcall(function() track:dispose() end)
+            track = nil
             killTask(trackPid)
         end
     end
@@ -129,7 +143,7 @@ local function loadTrack(tr)
     track = tr
     trackMeta = track:getMeta()
 
-    print(string.format("[%s] Loaded track: %s - %s (%s)",
+    log(string.format("[%s] Loaded track: %s - %s (%s)",
         track.type, trackMeta.artist, trackMeta.title, trackMeta.album))
 
     trackPid = addTask(function()
@@ -183,12 +197,12 @@ local function loadDriver()
         local track = comp.driver.new(drive, speakers)
         loadTrack(track)
     else
-        printError("No eligible driver found")
+        logError("No eligible driver found")
     end
 end
 
 addTask(function()
-    print("Ready")
+    log("Ready")
     while true do
         local ev = { os.pullEvent() }
         if ev[1] == "disk" and ev[2] == peripheral.getName(drive) then
@@ -207,16 +221,18 @@ addTask(function()
     end
 end)
 
+local guiWindow = window.create(current, 1, 1, w, h, false)
+
 addTask(function()
-    print("CONTROLS")
-    print(" - SPACE: Play/Pause")
-    print(" - S: Stop")
-    print(" - Right: Forward 5 seconds")
-    print(" - Left: Backward 5 seconds")
-    print(" - Up: Volume up 1")
-    print(" - Down: Volume down 1")
-    print(" - PgUp: Distance up 1")
-    print(" - DgDn: Distance down 1")
+    log("CONTROLS")
+    log(" - SPACE: Play/Pause")
+    log(" - S: Stop")
+    log(" - Right: Forward 5 seconds")
+    log(" - Left: Backward 5 seconds")
+    log(" - Up: Volume up 1")
+    log(" - Down: Volume down 1")
+    log(" - PgUp: Distance up 1")
+    log(" - DgDn: Distance down 1")
 
     while true do
         local ev = { os.pullEvent() }
@@ -225,10 +241,10 @@ addTask(function()
             if key == keys.space then
                 if track then
                     if track:getState() == "paused" then
-                        print("Play")
+                        log("Play")
                         track:play()
                     else
-                        print("Pause")
+                        log("Pause")
                         track:pause()
                     end
                 else
@@ -236,37 +252,51 @@ addTask(function()
                 end
             elseif key == keys.s then
                 if track then
-                    print("Stop")
+                    log("Stop")
                     track:stop()
                 end
             elseif key == keys.right then
                 if track then
-                    print("Forward 5 seconds")
+                    log("Forward 5 seconds")
                     local pos = track:getPosition()
                     track:setPosition(pos + 5)
                 end
             elseif key == keys.left then
                 if track then
-                    print("Backward 5 seconds")
+                    log("Backward 5 seconds")
                     local pos = track:getPosition()
                     track:setPosition(pos - 5)
                 end
             elseif key == keys.up then
                 local volume = speakers.volume + 0.05
                 setVolume(volume)
-                print("Volume:", speakers.volume * 100)
+                log("Volume:", speakers.volume * 100)
             elseif key == keys.down then
                 local volume = speakers.volume - 0.05
                 setVolume(volume)
-                print("Volume:", speakers.volume * 100)
+                log("Volume:", speakers.volume * 100)
             elseif key == keys.pageUp then
                 local distance = speakers.distance + 1
                 setDistance(distance)
-                print("Distance:", speakers.distance)
+                log("Distance:", speakers.distance)
             elseif key == keys.pageDown then
                 local distance = speakers.distance - 1
                 setDistance(distance)
-                print("Distance:", speakers.distance)
+                log("Distance:", speakers.distance)
+            elseif key == keys.f1 then
+                if logWindow.isVisible() then
+                    log("Switching to GUI screen")
+                    term.redirect(guiWindow)
+                    guiWindow.setVisible(true)
+                    logWindow.setVisible(false)
+                    guiWindow.redraw()
+                else
+                    log("Switching to LOG screen")
+                    term.redirect(logWindow)
+                    guiWindow.setVisible(false)
+                    logWindow.setVisible(true)
+                    logWindow.redraw()
+                end
             end
         end
     end

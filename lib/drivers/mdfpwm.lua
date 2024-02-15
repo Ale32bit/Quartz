@@ -26,11 +26,6 @@ local function playAudio(speakers, sample)
         return speakers.left.playAudio(getAverage(sample.left, sample.right), speakers.distance)
     end
 
-    if #sample.left ~= #sample.right then
-        printError("channel size difference!")
-        print(#sample.left, #sample.right)
-    end
-
     local ok = true
     if #sample.left > 0 then
         ok = ok and speakers.left.playAudio(sample.left, speakers.distance)
