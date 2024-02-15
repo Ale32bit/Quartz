@@ -1,7 +1,7 @@
 --[[ 
     MDFPWM parser library by AlexDevs
 
-    MIT License
+    Apache License 2.0
     https://github.com/Ale32bit/Quartz/blob/main/LICENSE
 
     This library reads Drucifer's MDFPWMv3 files
