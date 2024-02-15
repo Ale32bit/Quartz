@@ -55,6 +55,7 @@ settings.define("quartz.loop", {
 local w, h = term.getSize()
 local current = term.current()
 local logWindow = window.create(current, 1, 1, w, h, true)
+local guiWindow = window.create(current, 1, 1, w, h, false)
 local function log(...)
     local oldTerm = term.redirect(logWindow)
     print(...)
@@ -66,6 +67,22 @@ local function logError(...)
     term.redirect(oldTerm)
 end
 
+local function switchToLogScreen()
+    term.redirect(logWindow)
+    guiWindow.setVisible(false)
+    logWindow.setVisible(true)
+    logWindow.redraw()
+end
+
+local function switchToGuiScreen()
+    term.redirect(guiWindow)
+    guiWindow.setVisible(true)
+    logWindow.setVisible(false)
+    guiWindow.redraw()
+end
+
+
+local PrimeUI = require("lib.primeui")
 local drive = peripheral.find("drive")
 
 if not drive then
@@ -201,6 +218,30 @@ local function loadDriver()
     end
 end
 
+local function formatSeconds(seconds)
+    return string.format("%d:%02d", math.floor(seconds / 60), seconds % 60)
+end
+
+local progressBar
+local function updateProgressBar()
+    if progressBar and track and not track.disposed then
+        local length = trackMeta.length
+        local currentPos = track:getPosition()
+        pcall(progressBar, currentPos / length)
+        
+        local currentSeconds = formatSeconds(currentPos)
+        local totalSeconds = formatSeconds(length)
+
+        guiWindow.setBackgroundColor(colors.black)
+        guiWindow.setTextColor(colors.white)
+
+        guiWindow.setCursorPos(1, h - 7)
+        guiWindow.clearLine()
+
+        PrimeUI.centerLabel(guiWindow, 1, h-7, w, string.format("%s - %s", currentSeconds, totalSeconds))
+    end
+end
+
 addTask(function()
     log("Ready")
     while true do
@@ -221,19 +262,7 @@ addTask(function()
     end
 end)
 
-local guiWindow = window.create(current, 1, 1, w, h, false)
-
 addTask(function()
-    log("CONTROLS")
-    log(" - SPACE: Play/Pause")
-    log(" - S: Stop")
-    log(" - Right: Forward 5 seconds")
-    log(" - Left: Backward 5 seconds")
-    log(" - Up: Volume up 1")
-    log(" - Down: Volume down 1")
-    log(" - PgUp: Distance up 1")
-    log(" - DgDn: Distance down 1")
-
     while true do
         local ev = { os.pullEvent() }
         if ev[1] == "key" then
@@ -286,16 +315,10 @@ addTask(function()
             elseif key == keys.f1 then
                 if logWindow.isVisible() then
                     log("Switching to GUI screen")
-                    term.redirect(guiWindow)
-                    guiWindow.setVisible(true)
-                    logWindow.setVisible(false)
-                    guiWindow.redraw()
+                    switchToGuiScreen()
                 else
                     log("Switching to LOG screen")
-                    term.redirect(logWindow)
-                    guiWindow.setVisible(false)
-                    logWindow.setVisible(true)
-                    logWindow.redraw()
+                    switchToLogScreen()
                 end
             end
         end
@@ -303,10 +326,26 @@ addTask(function()
 end)
 
 addTask(function()
+    sleep(1)
     if settings.get("quartz.autoplay") then
-        sleep(1)
         loadDriver()
     end
+    switchToGuiScreen()
+end)
+
+addTask(function()
+    while true do
+        updateProgressBar()
+        sleep(0.2)
+    end
+end)
+
+addTask(function()
+    PrimeUI.button(guiWindow, 10, 10, "Hello", function() end, colors.white, colors.red, colors.yellow)
+
+    PrimeUI.centerLabel(guiWindow, 1, h-7, w, "0:00 - 0:00")
+    progressBar = PrimeUI.progressBar(guiWindow, 2, h - 5, w - 2, colors.white, colors.gray, false)
+    PrimeUI.run()
 end)
 
 local event = {}

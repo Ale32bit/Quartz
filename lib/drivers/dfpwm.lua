@@ -32,8 +32,10 @@ function Track:run()
         while self.state == "paused" do
             os.pullEvent("quartz_play")
         end
-        local chunk = self.handle.read(self.blockSize)
-        if not chunk then
+        local chunk = self.data:sub((self.position + 1), self.position + self.blockSize)
+        if not chunk or chunk == "" then
+            os.pullEvent("speaker_audio_empty")
+            sleep(0.5)
             os.queueEvent("quartz_driver_end")
             break
         end
@@ -43,6 +45,7 @@ function Track:run()
             os.pullEvent("speaker_audio_empty")
             sleep(0.5)
         end
+        self.position = self.position + self.blockSize
     end
 end
 
@@ -61,14 +64,14 @@ function Track:getState()
 end
 
 function Track:getPosition()
-    return self.handle.seek("cur")
+    return self.position / 6000
 end
 
 function Track:setPosition(pos)
     if pos < 0 then
         pos = 0
     end
-    self.handle.seek("set", pos * 6000)
+    self.position = pos * 6000
 end
 
 function Track:play()
@@ -85,14 +88,13 @@ end
 
 function Track:stop()
     self.state = "paused"
-    pcall(self.handle.seek, "set", 0)
+    self.position = 0
     os.queueEvent("quartz_pause")
     stopAudio(self.speakers)
 end
 
 function Track:dispose()
     self.disposed = true
-    self.handle.close()
 end
 
 local function new(drive, speakers)
@@ -104,17 +106,19 @@ local function new(drive, speakers)
     end
 
     local handle = fs.open(filePath, "rb")
-    local size = handle.seek("end")
-    handle.seek("set", 0)
+    local data = handle.readAll()
+    handle.close()
+    local size = #data
 
     local track = {
         state = "paused",
-        blockSize = 1024 * 16,
+        data = data,
+        blockSize = 6000,
+        position = 0,
         type = driverType,
         decoder = dfpwm.make_decoder(),
         filePath = filePath,
         speakers = speakers,
-        handle = handle,
         size = size,
         disposed = false,
     }

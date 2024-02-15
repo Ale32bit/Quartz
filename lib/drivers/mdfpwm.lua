@@ -59,6 +59,8 @@ function Track:run()
         end
         local sample = self.audio.getSample(self.index)
         if not sample then
+            os.pullEvent("speaker_audio_empty")
+            sleep(0.5)
             os.queueEvent("quartz_driver_end")
             break
         end
@@ -93,10 +95,18 @@ function Track:getPosition()
 end
 
 function Track:setPosition(pos)
+    if pos < 0 then
+        pos = 0
+    end
+    if pos > self.audio.length then
+        pos = self.audio.length
+    end
     self.index = pos + 1
     self:pause()
     self.leftDecoder, self.rightDecoder = createDecoders()
-    self:play()
+    if self.state ~= "paused" then
+        self:play()
+    end
 end
 
 function Track:play()

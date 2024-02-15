@@ -1,6 +1,7 @@
 local base = "https://raw.github.com/Ale32bit/Quartz/main/"
 local files = {
     "player.lua",
+    "lib/primeui.lua",
     "lib/mdfpwm.lua",
     "lib/drivers/dfpwm.lua",
     "lib/drivers/mdfpwm.lua",
