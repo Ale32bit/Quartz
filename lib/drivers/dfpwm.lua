@@ -72,6 +72,12 @@ function Track:setPosition(pos)
         pos = 0
     end
     self.position = pos * 6000
+    local wasPaused = self.state == "paused"
+    self:pause()
+    self.decoder = dfpwm.make_decoder()
+    if not wasPaused then
+        self:play()
+    end
 end
 
 function Track:play()

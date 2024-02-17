@@ -7,9 +7,6 @@
     https://github.com/Ale32bit/Quartz/blob/main/LICENSE
 ]]
 
-print("Quartz Player 0.0.4")
-
-
 settings.define("quartz.right", {
     description = "Right speaker",
     default = "right",
@@ -52,6 +49,8 @@ settings.define("quartz.loop", {
     type = "boolean"
 })
 
+local running = true
+
 local w, h = term.getSize()
 local current = term.current()
 local logWindow = window.create(current, 1, 1, w, h, true)
@@ -81,8 +80,12 @@ local function switchToGuiScreen()
     guiWindow.redraw()
 end
 
+local version = "0.1.0"
 
-local PrimeUI = require("lib.primeui")
+log("Quartz Player " .. version .. " by AlexDevs")
+log("https://github.com/Ale32bit/Quartz")
+
+local UI = require("lib.ui")
 local drive = peripheral.find("drive")
 
 if not drive then
@@ -105,6 +108,8 @@ if not speakers.left and not speakers.right then
 end
 
 log("Speaker configuration:", speakers.isMono and "mono" or "stereo")
+speakers.left.stop()
+speakers.right.stop()
 
 log("Loading playback drivers...")
 
@@ -131,6 +136,8 @@ local function killTask(pid)
     tasks[pid] = nil
     filters[pid] = nil
 end
+
+local ui = UI(guiWindow, addTask)
 
 local track
 local trackPid
@@ -218,32 +225,20 @@ local function loadDriver()
     end
 end
 
-local function formatSeconds(seconds)
-    return string.format("%d:%02d", math.floor(seconds / 60), seconds % 60)
-end
-
-local progressBar
-local function updateProgressBar()
-    if progressBar and track and not track.disposed then
-        local length = trackMeta.length
-        local currentPos = track:getPosition()
-        pcall(progressBar, currentPos / length)
-        
-        local currentSeconds = formatSeconds(currentPos)
-        local totalSeconds = formatSeconds(length)
-
-        guiWindow.setBackgroundColor(colors.black)
-        guiWindow.setTextColor(colors.white)
-
-        guiWindow.setCursorPos(1, h - 7)
-        guiWindow.clearLine()
-
-        PrimeUI.centerLabel(guiWindow, 1, h-7, w, string.format("%s - %s", currentSeconds, totalSeconds))
-    end
+local function exit()
+    running = false
+    guiWindow.setVisible(false)
+    stop(true)
+    term.redirect(current)
+    term.setBackgroundColor(colors.black)
+    term.setTextColor(colors.white)
+    term.clear()
+    term.setCursorPos(1, 1)
 end
 
 addTask(function()
     log("Ready")
+    log("Press F1 to toggle this screen")
     while true do
         local ev = { os.pullEvent() }
         if ev[1] == "disk" and ev[2] == peripheral.getName(drive) then
@@ -314,10 +309,8 @@ addTask(function()
                 log("Distance:", speakers.distance)
             elseif key == keys.f1 then
                 if logWindow.isVisible() then
-                    log("Switching to GUI screen")
                     switchToGuiScreen()
                 else
-                    log("Switching to LOG screen")
                     switchToLogScreen()
                 end
             end
@@ -333,6 +326,29 @@ addTask(function()
     switchToGuiScreen()
 end)
 
+local function formatSeconds(seconds)
+    return string.format("%02d:%02d", math.floor(seconds / 60), seconds % 60)
+end
+
+local progressBar
+local progressTime
+local function updateProgressBar()
+    if progressBar then
+        local length, currentPos
+        if track and not track.disposed then
+            length = trackMeta.length
+            currentPos = track:getPosition()
+        else
+            length = 0
+            currentPos = 0
+        end
+        local currentSeconds = formatSeconds(currentPos)
+        local totalSeconds = formatSeconds(math.ceil(length))
+        pcall(progressBar.setLevel, currentPos / math.ceil(length))
+        progressTime.setText(string.format("%s - %s", currentSeconds, totalSeconds))
+    end
+end
+
 addTask(function()
     while true do
         updateProgressBar()
@@ -341,15 +357,86 @@ addTask(function()
 end)
 
 addTask(function()
-    PrimeUI.button(guiWindow, 10, 10, "Hello", function() end, colors.white, colors.red, colors.yellow)
+    ui:label(1, h, "Q " .. version, {
+        text = colors.gray
+    })
 
-    PrimeUI.centerLabel(guiWindow, 1, h-7, w, "0:00 - 0:00")
-    progressBar = PrimeUI.progressBar(guiWindow, 2, h - 5, w - 2, colors.white, colors.gray, false)
-    PrimeUI.run()
+    ui:label(1,1, "GUI WIP")
+
+    local exitButton = ui:button(w, 1, "x", {
+        w = 1,
+        buttonBg = colors.black,
+        buttonFg = colors.red,
+        buttonBgActive = colors.red,
+        buttonFgActive = colors.white,
+    })
+    exitButton.onclick = function(self)
+        exit()
+    end
+
+    progressTime = ui:centerLabel(1, h - 7, w, "00:00 - 00:00")
+    progressBar = ui:progress(2, h - 5, w - 2, 0)
+
+    progressBar.onclick = function(self, level)
+        if track then
+            local at = trackMeta.length * level
+            track:setPosition(at)
+        end
+    end
+
+    local centerX = math.floor(w / 2)
+    local baseline = h - 1
+
+    local playButton = ui:button(centerX - 1, baseline - 2, "\x10", {
+        w = 5, h = 3
+    })
+    playButton.onclick = function(self)
+        if track then
+            if track:getState() == "paused" then
+                log("Resuming track")
+                track:play()
+            else
+                log("Pausing track")
+                track:pause()
+            end
+        else
+            loadDriver()
+        end
+    end
+
+    local forwardButton = ui:button(centerX + 5, baseline, "\x10\x10")
+    local backwardButton = ui:button(centerX - 6, baseline, "\x11\x11")
+
+    forwardButton.onclick = function(self)
+        if track then
+            log("Forward 5 seconds")
+            local pos = track:getPosition()
+            track:setPosition(pos + 5)
+        end
+    end
+
+    backwardButton.onclick = function(self)
+        if track then
+            log("Backward 5 seconds")
+            local pos = track:getPosition()
+            track:setPosition(pos - 5)
+        end
+    end
+
+    while true do
+        local ev = { os.pullEvent() }
+        if ev[1] == "quartz_play" then
+            playButton.text = " \x95\x95"
+            playButton.redraw()
+        elseif ev[1] == "quartz_pause" then
+            playButton.text = "\x10"
+            playButton.redraw()
+        end
+    end
 end)
 
 local event = {}
-while true do
+while running do
     for i, thread in pairs(tasks) do
         if coroutine.status(thread) == "dead" then
             tasks[i] = nil

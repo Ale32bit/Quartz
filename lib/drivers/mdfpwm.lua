@@ -72,6 +72,7 @@ function Track:run()
             os.pullEvent("speaker_audio_empty")
             sleep(0.5)
         end
+
         self.index = self.index + 1
     end
 end
@@ -102,9 +103,10 @@ function Track:setPosition(pos)
         pos = self.audio.length
     end
     self.index = pos + 1
+    local wasPaused = self.state == "paused"
     self:pause()
     self.leftDecoder, self.rightDecoder = createDecoders()
-    if self.state ~= "paused" then
+    if not wasPaused then
         self:play()
     end
 end
@@ -119,12 +121,15 @@ function Track:pause()
     self.state = "paused"
     os.queueEvent("quartz_pause")
     self.index = self.index - 2
+    if self.index < 1 then
+        self.index = 1
+    end
     stopAudio(self.speakers)
 end
 
 function Track:stop()
     self.state = "paused"
-    self.index = 0
+    self.index = 1
     os.queueEvent("quartz_pause")
     stopAudio(self.speakers)
     self.leftDecoder, self.rightDecoder = createDecoders()
