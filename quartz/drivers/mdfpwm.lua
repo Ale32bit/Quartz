@@ -1,5 +1,5 @@
 local dfpwm = require("cc.audio.dfpwm")
-local mdfpwm = require("lib.mdfpwm")
+local mdfpwm = require("quartz.lib.mdfpwm")
 
 local driverType = "mdfpwm"
 
@@ -8,7 +8,7 @@ local Track = {}
 local function getAverage(left, right)
     local avg = {}
     for i = 1, #left do
-        avg[i] = (left[i] + right[i]) / 2
+        avg[i] = ((left[i] or right[i]) + (right[i] or left[i])) / 2
     end
     return avg
 end
@@ -26,8 +26,10 @@ local function playAudio(speakers, sample)
     if speakers.distributedMode then
         local mono = getAverage(sample.left, sample.right)
         local ok = true
-        for i, speaker in ipairs(speakers.distributedSpeakers) do
-            ok = ok and speaker.playAudio(mono, speakers.distance)
+        if #mono > 0 then
+            for i, speaker in ipairs(speakers.distributedSpeakers) do
+                ok = ok and speaker.playAudio(mono, speakers.distance)
+            end
         end
         return ok
     end

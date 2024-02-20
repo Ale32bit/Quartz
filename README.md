@@ -34,13 +34,12 @@ Run the `player.lua` program and insert a disk containing a .dfpwm or a .mdfpwm 
 
 Quartz can be configured with the use of the `set` command.
 
-| Key                  | Description                                                                                                                                                     | Type    | Default        |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | -------------- |
-| `quartz.left`        | Left channel speaker, can be a side of the computer or a network name.                                                                                          | string  | `left`         |
-| `quartz.right`       | Right channel speaker, can be a side of the computer or a network name.                                                                                         | string  | `right`        |
-| `quartz.drivers`     | Directory path of the Quartz drivers, used as playback engines.                                                                                                 | string  | `/lib/drivers` |
-| `quartz.volume`      | Volume of the audio, must be a float number between 0.0 and 1.0.                                                                                                | number  | `1.0`          |
-| `quartz.distance`    | The range of the audio, must be an integer number between 0 and 128.                                                                                            | number  | `1`            |
-| `quartz.loop`        | Replays the audio track when it ends.                                                                                                                           | boolean | `true`         |
-| `quartz.autoplay`    | Automatically plays the disk when the program is started.                                                                                                       | boolean | `true`         |
-| `quartz.distributed` | Play mono audio on all speakers attached to the network. This setting disables `quartz.left` and `quartz.right`. Fine tune `quartz.distance` for best coverage. | boolean | `false`        |
+| Key                  | Description                                                                                                                                                     | Type    | Default |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------- |
+| `quartz.left`        | Left channel speaker, can be a side of the computer or a network name.                                                                                          | string  | `left`  |
+| `quartz.right`       | Right channel speaker, can be a side of the computer or a network name.                                                                                         | string  | `right` |
+| `quartz.volume`      | Volume of the audio, must be a float number between 0.0 and 1.0.                                                                                                | number  | `1.0`   |
+| `quartz.distance`    | The range of the audio, must be an integer number between 0 and 128.                                                                                            | number  | `1`     |
+| `quartz.loop`        | Replays the audio track when it ends.                                                                                                                           | boolean | `true`  |
+| `quartz.autoplay`    | Automatically plays the disk when the program is started.                                                                                                       | boolean | `true`  |
+| `quartz.distributed` | Play mono audio on all speakers attached to the network. This setting disables `quartz.left` and `quartz.right`. Fine tune `quartz.distance` for best coverage. | boolean | `false` |

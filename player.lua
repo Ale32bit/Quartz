@@ -25,12 +25,6 @@ settings.define("quartz.distributed", {
     type = "boolean",
 })
 
-settings.define("quartz.drivers", {
-    description = "Directory path of playback driver files",
-    default = "/lib/drivers",
-    type = "string",
-})
-
 settings.define("quartz.autoplay", {
     description = "Autoplay the track on start",
     default = true,
@@ -86,12 +80,12 @@ local function switchToGuiScreen()
     guiWindow.redraw()
 end
 
-local version = "0.1.0"
+local version = "0.2.0"
 
 log("Quartz Player " .. version .. " by AlexDevs")
 log("https://github.com/Ale32bit/Quartz")
 
-local UI = require("lib.ui")
+local UI = require("quartz.lib.ui")
 local drive = peripheral.find("drive")
 
 if not drive then
@@ -144,9 +138,10 @@ log("Loading playback drivers...")
 
 local drivers = {}
 
-for i, fileName in ipairs(fs.list(settings.get("quartz.drivers"))) do
+local driversPath = "/quartz/drivers"
+for i, fileName in ipairs(fs.list(driversPath)) do
     local file = fileName:gsub("%.lua$", "")
-    local path = fs.combine(settings.get("quartz.drivers"), file):gsub("/", ".")
+    local path = fs.combine(driversPath, file):gsub("/", ".")
 
     local driver = require(path)
     drivers[driver.type] = driver
@@ -185,6 +180,8 @@ local function stop(dispose)
             pcall(function() track:dispose() end)
             track = nil
             killTask(trackPid)
+
+            os.queueEvent("quartz_dispose")
         end
     end
 end
@@ -198,6 +195,8 @@ local function loadTrack(tr)
 
     log(string.format("[%s] Loaded track: %s - %s (%s)",
         track.type, trackMeta.artist, trackMeta.title, trackMeta.album))
+
+    os.queueEvent("quartz_load", trackMeta, track)
 
     trackPid = addTask(function()
         track:run()
@@ -403,6 +402,12 @@ addTask(function()
         exit()
     end
 
+    local artistLabel = ui:centerLabel(1, 4, w, "");
+    local titleLabel = ui:centerLabel(1, 6, w, "No disk");
+    local albumLabel = ui:centerLabel(1, 9, w, "Insert a disk with an audio track", {
+        text = colors.lightGray
+    });
+
     progressTime = ui:centerLabel(1, h - 7, w, "00:00 - 00:00")
     progressBar = ui:progress(2, h - 5, w - 2, 0)
 
@@ -460,6 +465,15 @@ addTask(function()
         elseif ev[1] == "quartz_pause" then
             playButton.text = "\x10"
             playButton.redraw()
+        elseif ev[1] == "quartz_load" then
+            local meta = ev[2]
+            artistLabel.setText(meta.artist)
+            titleLabel.setText(meta.title)
+            albumLabel.setText(meta.album)
+        elseif ev[1] == "quartz_dispose" then
+            artistLabel.setText("")
+            titleLabel.setText("No disk")
+            albumLabel.setText("Insert a disk with an audio track")
         end
     end
 end)
