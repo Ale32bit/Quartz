@@ -2,9 +2,12 @@
 
 DFPWM and MDFPWM audio player for ComputerCraft.
 
+![quartz](https://github.com/Ale32bit/Quartz/assets/4512372/3d22b768-e024-4c88-b40c-e9598ad37853)
+
 ## Installation
 
 Quartz can be installed by executing the `download.lua` file or by copy pasting this command:
+
 ```
 wget run https://raw.github.com/Ale32bit/Quartz/main/download.lua
 ```
