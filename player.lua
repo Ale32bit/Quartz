@@ -3,7 +3,7 @@
     https://alexdevs.me
     https://github.com/Ale32bit/Quartz
 
-    Apache License 2.0
+    GNU GPLv3 License
     https://github.com/Ale32bit/Quartz/blob/main/LICENSE
 ]]
 
