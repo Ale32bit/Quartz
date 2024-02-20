@@ -19,6 +19,12 @@ settings.define("quartz.left", {
     type = "string",
 })
 
+settings.define("quartz.distributed", {
+    description = "Play mono audio from all speakers connected to the network",
+    default = false,
+    type = "boolean",
+})
+
 settings.define("quartz.drivers", {
     description = "Directory path of playback driver files",
     default = "/lib/drivers",
@@ -102,14 +108,37 @@ speakers.right = speakers.right or speakers.left
 speakers.isMono = speakers.left == speakers.right
 speakers.volume = settings.get("quartz.volume")
 speakers.distance = settings.get("quartz.distance")
+speakers.distributedMode = settings.get("quartz.distributed")
+speakers.distributedSpeakers = {}
+if speakers.distributedMode then
+    speakers.distributedSpeakers = { peripheral.find("speaker") }
+end
 
-if not speakers.left and not speakers.right then
+if not speakers.left and not speakers.right and not speakers.distributedMode then
     error("Speakers not found", 0)
 end
 
-log("Speaker configuration:", speakers.isMono and "mono" or "stereo")
-speakers.left.stop()
-speakers.right.stop()
+if speakers.distributedMode and #speakers.distributedSpeakers == 0 then
+    error("Speakers not found", 0)
+end
+
+local mode
+if speakers.distributedMode then
+    mode = "distributed"
+else
+    mode = speakers.isMono and "mono" or "stereo"
+end
+
+log("Speaker configuration:", mode)
+
+if speakers.distributedMode then
+    for i, speaker in ipairs(speakers.distributedSpeakers) do
+        speaker.stop()
+    end
+else
+    speakers.left.stop()
+    speakers.right.stop()
+end
 
 log("Loading playback drivers...")
 
@@ -361,7 +390,7 @@ addTask(function()
         text = colors.gray
     })
 
-    ui:label(1,1, "GUI WIP")
+    ui:label(1, 1, "GUI WIP")
 
     local exitButton = ui:button(w, 1, "x", {
         w = 1,

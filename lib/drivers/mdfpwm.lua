@@ -22,6 +22,16 @@ end
 local function playAudio(speakers, sample)
     adjustVolume(sample.left, speakers.volume)
     adjustVolume(sample.right, speakers.volume)
+
+    if speakers.distributedMode then
+        local mono = getAverage(sample.left, sample.right)
+        local ok = true
+        for i, speaker in ipairs(speakers.distributedSpeakers) do
+            ok = ok and speaker.playAudio(mono, speakers.distance)
+        end
+        return ok
+    end
+
     if speakers.isMono then
         return speakers.left.playAudio(getAverage(sample.left, sample.right), speakers.distance)
     end
@@ -38,6 +48,13 @@ local function playAudio(speakers, sample)
 end
 
 local function stopAudio(speakers)
+    if speakers.distributedMode then
+        for i, speaker in ipairs(speakers.distributedSpeakers) do
+            speaker.stop()
+        end
+        return
+    end
+
     speakers.left.stop()
     if speakers.isMono then
         return
