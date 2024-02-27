@@ -159,15 +159,7 @@ function Track:dispose()
     self.handle.close()
 end
 
-local function new(drive, speakers)
-    local drivePath = drive.getMountPath()
-    local found = fs.find(fs.combine(drivePath, "*.mdfpwm"))
-    local filePath = found[1]
-    if not filePath then
-        error("No compatible files!")
-    end
-
-    local handle = fs.open(filePath, "rb")
+local function new(handle, name, speakers)
     local audio = mdfpwm.parse(handle)
 
     local track = {
@@ -189,14 +181,12 @@ end
 
 -- returns: isCompatible: bool, weight: number
 -- higher weight = higher priority
-local function checkCompatibility(drive)
-    if not drive.hasData() then
-        return false
+local function checkCompatibility(handle, name)
+    if not handle then
+        return false, 10
     end
-
-    local path = drive.getMountPath()
-    local found = fs.find(fs.combine(path, "*.mdfpwm"))
-    return #found > 0, 10
+    local meta, err = mdfpwm.meta(handle)
+    return meta ~= nil and name:match("%.mdfpwm$"), 10
 end
 
 return {

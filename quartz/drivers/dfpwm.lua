@@ -119,15 +119,8 @@ function Track:dispose()
     self.disposed = true
 end
 
-local function new(drive, speakers)
-    local drivePath = drive.getMountPath()
-    local found = fs.find(fs.combine(drivePath, "*.dfpwm"))
-    local filePath = found[1]
-    if not filePath then
-        error("No compatible files!")
-    end
+local function new(handle, name, speakers)
 
-    local handle = fs.open(filePath, "rb")
     local data = handle.readAll()
     handle.close()
     local size = #data
@@ -139,7 +132,6 @@ local function new(drive, speakers)
         position = 0,
         type = driverType,
         decoder = dfpwm.make_decoder(),
-        filePath = filePath,
         speakers = speakers,
         size = size,
         disposed = false,
@@ -149,14 +141,8 @@ local function new(drive, speakers)
     return track
 end
 
-local function checkCompatibility(drive)
-    if not drive.hasData() then
-        return false
-    end
-
-    local path = drive.getMountPath()
-    local found = fs.find(fs.combine(path, "*.dfpwm"))
-    return #found > 0, 10
+local function checkCompatibility(handle, name)
+    return handle and name:match("%.dfpwm"), 10
 end
 
 return {
