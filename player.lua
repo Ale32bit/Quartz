@@ -188,6 +188,7 @@ end
 quartz.ui = UI(quartz.guiWindow, quartz.addTask)
 quartz.track = nil
 quartz.trackMeta = nil
+quartz.trackSource = nil
 local trackPid = nil
 
 function quartz.play()
@@ -210,17 +211,18 @@ function quartz.stop(dispose)
     end
 end
 
-function quartz.loadTrack(tr)
+function quartz.loadTrack(tr, src)
     if quartz.track then
         quartz.stop(true)
     end
     quartz.track = tr
     quartz.trackMeta = quartz.track:getMeta()
+    quartz.trackSource = src
 
     quartz.log(string.format("[%s] Loaded track: %s - %s (%s)",
         quartz.track.type, quartz.trackMeta.artist, quartz.trackMeta.title, quartz.trackMeta.album))
 
-    os.queueEvent("quartz_load", quartz.trackMeta, quartz.track)
+    os.queueEvent("quartz_load", quartz.trackMeta, quartz.track, quartz.trackSource)
 
     trackPid = quartz.addTask(function()
         quartz.track:run()
@@ -251,7 +253,14 @@ function quartz.setDistance(dist)
     os.queueEvent("quartz_distance", dist)
 end
 
-function quartz.loadDriver(handle, name)
+function quartz.loadDriver(handle, name, source)
+    if not source then
+        if debug and debug.getinfo then
+            local debugSource = debug.getinfo(2, "S").source
+            source = debugSource:match("/(%w+)%.lua$")
+        end
+    end
+
     local compatibleDrivers = {}
 
     for _, driver in pairs(quartz.drivers) do
@@ -271,7 +280,7 @@ function quartz.loadDriver(handle, name)
     local comp = compatibleDrivers[1]
     if comp then
         local track = comp.driver.new(handle, name, quartz.speakers)
-        quartz.loadTrack(track)
+        quartz.loadTrack(track, source)
         return true
     end
     return false
