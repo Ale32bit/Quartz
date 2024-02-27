@@ -14,7 +14,7 @@ local function verifyHeader(handle)
 end
 
 local function readMetadata(handle)
-    return string.unpack("<Is1s1s1", handle.read(770))
+    return string.unpack("<Is1s1s1", handle.read(772))
 end
 
 local function parse(handle)
