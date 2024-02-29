@@ -335,7 +335,13 @@ while running do
                 if ok then
                     filters[i] = par
                 else
-                    error(par, 0)
+                    running = false
+                    quartz.exit()
+                    print("Quartz has crashed!")
+                    print("Version:", quartz.version)
+                    printError(debug.traceback(thread, par))
+                    -- skip pulling event
+                    error()
                 end
             end
         end

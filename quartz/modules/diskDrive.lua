@@ -22,16 +22,17 @@ end
 local function driveLoader()
     while true do
         local ev = { os.pullEvent() }
-        if ev[1] == "disk" and ev[2] == peripheral.getName(drive) then
+        if ev[1] == "disk" then
+            drive = peripheral.wrap(ev[2])
             -- This event is fired on startup, somehow, without interacting with the drive
             -- doesn't happen in later versions
             if os.clock() > 1 then
                 tryLoadDriveTrack()
             end
-        elseif ev[1] == "disk_eject" and quartz.trackSource == "diskDrive" then
+        elseif ev[1] == "disk_eject" and quartz.trackSource == "diskDrive" and drive and ev[2] == peripheral.getName(drive) then
             quartz.stop(true)
         elseif ev[1] == "quartz_driver_end" then
-            if settings.get("quartz.loop") and quartz.trackSource == "diskDrive" then
+            if settings.get("quartz.loop") and quartz.trackSource == "diskDrive" and drive then
                 tryLoadDriveTrack()
             end
         end
