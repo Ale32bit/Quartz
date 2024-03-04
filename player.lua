@@ -181,6 +181,9 @@ function quartz.addTask(func)
 end
 
 function quartz.killTask(pid)
+    if not pid then
+        return
+    end
     tasks[pid] = nil
     filters[pid] = nil
 end
