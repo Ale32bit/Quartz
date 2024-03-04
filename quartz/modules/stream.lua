@@ -8,9 +8,14 @@ local function gui()
         term.setCursorPos(1, 1)
         write("URL: ")
         local url = read()
-        local h, err = http.get("https://cc.alexdevs.me/mdfpwm?url=" .. textutils.urlEncode(url))
+        local streamType = url:match("%.(m?dfpwm)$")
+        if not streamType then
+            url = "https://cc.alexdevs.me/mdfpwm?url=" .. textutils.urlEncode(url)
+            streamType = "mdfpwm"
+        end
+        local h, err = http.get(url)
         if h then
-            quartz.loadDriver(h, "stream.mdfpwm")
+            quartz.loadDriver(h, "stream." .. streamType)
         end
     end
 end
