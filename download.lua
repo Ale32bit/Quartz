@@ -3,12 +3,12 @@ local files = {
     "player.lua",
     "quartz/lib/ui.lua",
     "quartz/lib/mdfpwm.lua",
+    "quartz/lib/rawDfpwm.lua",
     "quartz/drivers/dfpwm.lua",
     "quartz/drivers/mdfpwm.lua",
     "quartz/modules/diskDrive.lua",
     "quartz/modules/ui.lua",
 }
-
 
 local function download(url, path)
     print("Downloading", path)

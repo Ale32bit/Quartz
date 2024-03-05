@@ -1,5 +1,5 @@
-local dfpwm = require("cc.audio.dfpwm")
 local mdfpwm = require("quartz.lib.mdfpwm")
+local make_decoder
 
 local driverType = "mdfpwm"
 
@@ -65,7 +65,7 @@ local function stopAudio(speakers)
 end
 
 local function createDecoders()
-    return dfpwm.make_decoder(), dfpwm.make_decoder()
+    return make_decoder(), make_decoder()
 end
 
 function Track:run()
@@ -159,7 +159,8 @@ function Track:dispose()
     self.handle.close()
 end
 
-local function new(handle, name, speakers)
+local function new(handle, name, speakers, decoder)
+    make_decoder = decoder
     local audio = mdfpwm.parse(handle)
 
     local track = {

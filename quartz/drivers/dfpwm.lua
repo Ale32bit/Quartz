@@ -1,4 +1,4 @@
-local dfpwm = require("cc.audio.dfpwm")
+local make_decoder
 
 local driverType = "dfpwm"
 
@@ -90,7 +90,7 @@ function Track:setPosition(pos)
     self.position = pos * 6000
     local wasPaused = self.state == "paused"
     self:pause()
-    self.decoder = dfpwm.make_decoder()
+    self.decoder = make_decoder()
     if not wasPaused then
         self:play()
     end
@@ -119,8 +119,8 @@ function Track:dispose()
     self.disposed = true
 end
 
-local function new(handle, name, speakers)
-
+local function new(handle, name, speakers, decoder)
+    make_decoder = decoder
     local data = handle.readAll()
     handle.close()
     local size = #data
@@ -131,7 +131,7 @@ local function new(handle, name, speakers)
         blockSize = 6000,
         position = 0,
         type = driverType,
-        decoder = dfpwm.make_decoder(),
+        decoder = decoder(),
         speakers = speakers,
         size = size,
         disposed = false,

@@ -49,10 +49,17 @@ settings.define("quartz.loop", {
     type = "boolean"
 })
 
+settings.define("quartz.raw", {
+    description = "Play unfiltered audio",
+    default = false,
+    type = "boolean"
+})
+
 local quartz = {
-    version = "0.3.0",
+    version = "0.4.0",
     modules = {},
     drivers = {},
+    args = table.pack(...),
 }
 
 local running = true
@@ -99,6 +106,8 @@ quartz.log("Quartz Player " .. quartz.version .. " by AlexDevs")
 quartz.log("https://github.com/Ale32bit/Quartz")
 
 local UI = require("quartz.lib.ui")
+local dfpwm = require("cc.audio.dfpwm")
+local rawDfpwm = require("quartz.lib.rawDfpwm")
 
 local speakers = {
     left = peripheral.wrap(settings.get("quartz.left")),
@@ -141,6 +150,13 @@ if speakers.distributedMode then
 else
     speakers.left.stop()
     speakers.right.stop()
+end
+
+function quartz.make_decoder()
+    if settings.get("quartz.raw") then
+        return rawDfpwm.make_raw_decoder()
+    end
+    return dfpwm.make_decoder()
 end
 
 quartz.log("Loading playback drivers...")
@@ -282,7 +298,7 @@ function quartz.loadDriver(handle, name, source)
 
     local comp = compatibleDrivers[1]
     if comp then
-        local track = comp.driver.new(handle, name, quartz.speakers)
+        local track = comp.driver.new(handle, name, quartz.speakers, quartz.make_decoder)
         quartz.loadTrack(track, source)
         return true
     end
