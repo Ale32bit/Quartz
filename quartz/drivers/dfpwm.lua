@@ -1,12 +1,17 @@
 local make_decoder
+local mmin, mmax = math.min, math.max
 
 local driverType = "dfpwm"
 
 local Track = {}
 
+local function clamp(val, min, max)
+    return mmax(min, mmin(max, val))
+end
+
 local function adjustVolume(buffer, volume)
     for i = 1, #buffer do
-        buffer[i] = buffer[i] * volume
+        buffer[i] = clamp(buffer[i] * volume, -128, 127)
     end
 end
 
