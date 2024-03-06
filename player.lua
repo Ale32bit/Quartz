@@ -127,11 +127,14 @@ if speakers.distributedMode then
 end
 
 if not speakers.left and not speakers.right and not speakers.distributedMode then
-    error("Speakers not found", 0)
+    printError("The configured speakers could not be found.")
+    print("Configure the speakers by setting the peripheral names to the settings \"quartz.left\" and/or \"quartz.right\" with the \"set\" command.")
+    return
 end
 
 if speakers.distributedMode and #speakers.distributedSpeakers == 0 then
-    error("Speakers not found", 0)
+    printError("There are no speakers attached to the network.")
+    return
 end
 
 local mode
