@@ -4,6 +4,7 @@ local function new(self, win, addTask)
     local ui = {
         window = win,
         addTask = addTask,
+        active = true,
         elements = {},
         defaultColors = {
             text = colors.white,
@@ -16,6 +17,23 @@ local function new(self, win, addTask)
             buttonBgActive = colors.white,
         }
     }
+
+    function ui.redraw()
+        ui.window.setBackgroundColor(ui.defaultColors.background)
+        ui.window.setTextColor(ui.defaultColors.text)
+        ui.window.clear()
+        for i, element in pairs(ui.elements) do
+            element.redraw()
+        end
+    end
+
+    function ui.setFocus(enable)
+        ui.active = enable
+        ui.window.setVisible(enable)
+        if enable then
+            ui.redraw()
+        end
+    end
 
     return setmetatable(ui, { __index = UI })
 end
@@ -48,6 +66,8 @@ function UI:label(x, y, text, options)
         element.text = text
         element.redraw()
     end
+
+    table.insert(self.elements, element)
 
     element.redraw()
 
@@ -84,6 +104,8 @@ function UI:centerLabel(x, y, w, text, options)
         element.text = text
         element.redraw()
     end
+
+    table.insert(self.elements, element)
 
     element.redraw()
 
@@ -139,24 +161,27 @@ function UI:button(x, y, text, options)
     self.addTask(function()
         while true do
             local ev, b, x, y = os.pullEvent()
-
-            if ev == "mouse_click" then
-                if x >= element.x and y >= element.y
-                    and x < element.x + element.w and y < element.y + element.h then
-                    element.active = true
+            if self.active then
+                if ev == "mouse_click" then
+                    if x >= element.x and y >= element.y
+                        and x < element.x + element.w and y < element.y + element.h then
+                        element.active = true
+                        element.redraw()
+                    end
+                elseif ev == "mouse_up" then
+                    element.active = false
                     element.redraw()
-                end
-            elseif ev == "mouse_up" then
-                element.active = false
-                element.redraw()
 
-                if x >= element.x and y >= element.y
-                    and x < element.x + element.w and y < element.y + element.h then
+                    if x >= element.x and y >= element.y
+                        and x < element.x + element.w and y < element.y + element.h then
                         element:onclick()
+                    end
                 end
             end
         end
     end)
+
+    table.insert(self.elements, element)
 
     element.redraw()
 
@@ -207,12 +232,16 @@ function UI:progress(x, y, w, level, options)
     self.addTask(function()
         while true do
             local ev, b, x, y = os.pullEvent("mouse_click")
-            if x >= element.x and y == element.y and x < element.x + element.w then
-                local p = (x - element.x) / (element.w - 1)
-                element:onclick(p)
+            if self.active then
+                if x >= element.x and y == element.y and x < element.x + element.w then
+                    local p = (x - element.x) / (element.w - 1)
+                    element:onclick(p)
+                end
             end
         end
     end)
+
+    table.insert(self.elements, element)
 
     return element
 end

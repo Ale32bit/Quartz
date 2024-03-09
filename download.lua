@@ -8,6 +8,7 @@ local files = {
     "quartz/drivers/mdfpwm.lua",
     "quartz/modules/diskDrive.lua",
     "quartz/modules/ui.lua",
+    "quartz/modules/stream.lua",
 }
 
 local function download(url, path)

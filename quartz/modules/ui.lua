@@ -3,53 +3,55 @@ local quartz, ui
 local function keyControls()
     while true do
         local ev = { os.pullEvent() }
-        if ev[1] == "key" then
-            local key = ev[2]
-            if key == keys.space then
-                if quartz.track then
-                    if quartz.track:getState() == "paused" then
-                        quartz.log("Play")
-                        quartz.track:play()
+        if ui.active then
+            if ev[1] == "key" then
+                local key = ev[2]
+                if key == keys.space then
+                    if quartz.track then
+                        if quartz.track:getState() == "paused" then
+                            quartz.log("Play")
+                            quartz.track:play()
+                        else
+                            quartz.log("Pause")
+                            quartz.track:pause()
+                        end
                     else
-                        quartz.log("Pause")
-                        quartz.track:pause()
+                        quartz.loadDriver()
                     end
-                else
-                    quartz.loadDriver()
+                elseif key == keys.s then
+                    if quartz.track then
+                        quartz.log("Stop")
+                        quartz.track:stop()
+                    end
+                elseif key == keys.right then
+                    if quartz.track then
+                        quartz.log("Forward 5 seconds")
+                        local pos = quartz.track:getPosition()
+                        quartz.track:setPosition(pos + 5)
+                    end
+                elseif key == keys.left then
+                    if quartz.track then
+                        quartz.log("Backward 5 seconds")
+                        local pos = quartz.track:getPosition()
+                        quartz.track:setPosition(pos - 5)
+                    end
+                elseif key == keys.up then
+                    local volume = quartz.speakers.volume + 0.05
+                    quartz.setVolume(volume)
+                    quartz.log("Volume:", quartz.speakers.volume * 100)
+                elseif key == keys.down then
+                    local volume = quartz.speakers.volume - 0.05
+                    quartz.setVolume(volume)
+                    quartz.log("Volume:", quartz.speakers.volume * 100)
+                elseif key == keys.pageUp then
+                    local distance = quartz.speakers.distance + 1
+                    quartz.setDistance(distance)
+                    quartz.log("Distance:", quartz.speakers.distance)
+                elseif key == keys.pageDown then
+                    local distance = quartz.speakers.distance - 1
+                    quartz.setDistance(distance)
+                    quartz.log("Distance:", quartz.speakers.distance)
                 end
-            elseif key == keys.s then
-                if quartz.track then
-                    quartz.log("Stop")
-                    quartz.track:stop()
-                end
-            elseif key == keys.right then
-                if quartz.track then
-                    quartz.log("Forward 5 seconds")
-                    local pos = quartz.track:getPosition()
-                    quartz.track:setPosition(pos + 5)
-                end
-            elseif key == keys.left then
-                if quartz.track then
-                    quartz.log("Backward 5 seconds")
-                    local pos = quartz.track:getPosition()
-                    quartz.track:setPosition(pos - 5)
-                end
-            elseif key == keys.up then
-                local volume = quartz.speakers.volume + 0.05
-                quartz.setVolume(volume)
-                quartz.log("Volume:", quartz.speakers.volume * 100)
-            elseif key == keys.down then
-                local volume = quartz.speakers.volume - 0.05
-                quartz.setVolume(volume)
-                quartz.log("Volume:", quartz.speakers.volume * 100)
-            elseif key == keys.pageUp then
-                local distance = quartz.speakers.distance + 1
-                quartz.setDistance(distance)
-                quartz.log("Distance:", quartz.speakers.distance)
-            elseif key == keys.pageDown then
-                local distance = quartz.speakers.distance - 1
-                quartz.setDistance(distance)
-                quartz.log("Distance:", quartz.speakers.distance)
             end
         end
     end

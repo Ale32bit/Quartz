@@ -68,6 +68,7 @@ local w, h = term.getSize()
 local current = term.current()
 quartz.logWindow = window.create(current, 1, 1, w, h, true)
 quartz.guiWindow = window.create(current, 1, 1, w, h, false)
+quartz.termWindow = current
 
 quartz.guiWindow.setCursorPos(1, 1)
 quartz.guiWindow.write("Quartz Player " .. quartz.version)
