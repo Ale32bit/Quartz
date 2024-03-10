@@ -43,4 +43,4 @@ Quartz can be configured with the use of the `set` command.
 | `quartz.loop`        | Replays the audio track when it ends.                                                                                                                           | boolean | `true`  |
 | `quartz.autoplay`    | Automatically plays the disk when the program is started.                                                                                                       | boolean | `true`  |
 | `quartz.distributed` | Play mono audio on all speakers attached to the network. This setting disables `quartz.left` and `quartz.right`. Fine tune `quartz.distance` for best coverage. | boolean | `false` |
-| `quartz.raw` | Skip the audio filters when decoding DFPWM. | boolean | `false` |
+| `quartz.raw`         | Skip the audio filters when decoding DFPWM.                                                                                                                     | boolean | `false` |
