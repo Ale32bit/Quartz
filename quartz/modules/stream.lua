@@ -1,7 +1,25 @@
 local UI = require("quartz.lib.ui")
+local uriList = require("quartz.lib.urilist")
 local quartz
 local ui
 local streamUi
+
+local function streamUrilist(list, meta)
+    local uri = table.remove(list, 1)
+    repeat
+        local streamUrl = "https://cc.alexdevs.me/mdfpwm?url=" ..
+            textutils.urlEncode(uri) .. "&title=" .. textutils.urlEncode(uri) .. "&album=" .. textutils.urlEncode(meta.album) .. "&author=" .. textutils.urlEncode(meta.author)
+
+        local h, err = http.get(streamUrl)
+        if h then
+            quartz.loadDriver(h, "uri.mdfpwm")
+        end
+
+        os.pullEvent("quartz_driver_end")
+
+        uri = table.remove(list, 1)
+    until uri == nil
+end
 
 local function gui()
     local w, h = quartz.guiWindow.getSize()
@@ -45,13 +63,17 @@ local function gui()
                 local url = read()
                 local streamType = url:match("%.(m?dfpwm)$")
                 if not streamType then
-                    local title = url
-                    if #title >= w - 5 then
-                        title = title:sub(-(w - 8)) .. "..."
+                    if url:match("%.urilist$") then
+                        streamType = "urilist"
+                    else
+                        local title = url
+                        if #title >= w - 5 then
+                            title = title:sub(-(w - 8)) .. "..."
+                        end
+                        url = "https://cc.alexdevs.me/mdfpwm?url=" ..
+                            textutils.urlEncode(url) .. "&title=" .. textutils.urlEncode(title)
+                        streamType = "mdfpwm"
                     end
-                    url = "https://cc.alexdevs.me/mdfpwm?url=" ..
-                        textutils.urlEncode(url) .. "&title=" .. textutils.urlEncode(title)
-                    streamType = "mdfpwm"
                 end
                 term.setCursorPos(1, 3)
                 term.setTextColor(colors.white)
@@ -59,7 +81,16 @@ local function gui()
                 print("Downloading...")
                 local hr, err = http.get(url)
                 if hr then
-                    quartz.loadDriver(hr, "stream." .. streamType)
+                    if streamType == "urilist" then
+                        local list, meta = uriList.parse(hr.readAll())
+                        hr.close()
+
+                        quartz.addTask(function()
+                            streamUrilist(list, meta)
+                        end)
+                    else
+                        quartz.loadDriver(hr, "stream." .. streamType)
+                    end
                     exit()
                 else
                     term.setCursorPos(1, 4)
