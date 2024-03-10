@@ -7,6 +7,7 @@
     https://github.com/Ale32bit/Quartz/blob/main/LICENSE
 ]]
 
+local emulateSmallTerm = true
 settings.define("quartz.right", {
     description = "Right speaker",
     default = "right",
@@ -64,8 +65,14 @@ local quartz = {
 
 local running = true
 
-local w, h = term.getSize()
 local current = term.current()
+if emulateSmallTerm then
+    term.setBackgroundColor(colors.brown)
+    term.clear()
+    -- turtle / ni term
+    current = window.create(term.current(), 1, 1, 39, 13, true)
+end
+local w, h = current.getSize()
 quartz.logWindow = window.create(current, 1, 1, w, h, true)
 quartz.guiWindow = window.create(current, 1, 1, w, h, false)
 quartz.termWindow = current
@@ -129,7 +136,8 @@ end
 
 if not speakers.left and not speakers.right and not speakers.distributedMode then
     printError("The configured speakers could not be found.")
-    print("Configure the speakers by setting the peripheral names to the settings \"quartz.left\" and/or \"quartz.right\" with the \"set\" command.")
+    print(
+    "Configure the speakers by setting the peripheral names to the settings \"quartz.left\" and/or \"quartz.right\" with the \"set\" command.")
     return
 end
 

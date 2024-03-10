@@ -9,7 +9,7 @@ local function parse(content)
 
     local metaString = table.remove(lines, 1)
     meta.album = metaString:match("^(.+);") or "Mix"
-    meta.author = metaString:match(";(.+)$") or "Multiple authors"
+    meta.artist = metaString:match(";(.+)$") or "Multiple artists"
     repeat
         local uri = table.remove(lines, 1)
         if http.checkURL(uri) then
