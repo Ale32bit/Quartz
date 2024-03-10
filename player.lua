@@ -7,7 +7,7 @@
     https://github.com/Ale32bit/Quartz/blob/main/LICENSE
 ]]
 
-local emulateSmallTerm = true
+local emulateSmallTerm = false
 settings.define("quartz.right", {
     description = "Right speaker",
     default = "right",
