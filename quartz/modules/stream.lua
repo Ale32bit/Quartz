@@ -31,7 +31,7 @@ local function streamUrilist(list, meta)
             streamUrl = streamUrl .. "&album=" .. textutils.urlEncode(meta.album) .. "&artist=" .. textutils.urlEncode(meta.artist)
         end
 
-        local h, err = http.get(streamUrl)
+        local h, err = http.get(streamUrl, nil, true)
         if h then
             quartz.loadDriver(h, "uri." .. streamType)
         end
@@ -86,7 +86,7 @@ local function gui()
                 term.setTextColor(colors.white)
                 term.setBackgroundColor(colors.black)
                 print("Downloading...")
-                local hr, err = http.get(url)
+                local hr, err = http.get(url, nil, true)
                 if hr then
                     if streamType == "urilist" then
                         local list, meta = uriList.parse(hr.readAll())

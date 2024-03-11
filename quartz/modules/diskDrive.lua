@@ -32,7 +32,7 @@ local function streamUrilist(list, meta)
             "&album=" .. textutils.urlEncode(meta.album) .. "&artist=" .. textutils.urlEncode(meta.artist)
         end
 
-        local h, err = http.get(streamUrl)
+        local h, err = http.get(streamUrl, nil, true)
         if h then
             quartz.loadDriver(h, "uri." .. streamType)
         end
