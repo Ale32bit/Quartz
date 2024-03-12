@@ -51,6 +51,10 @@ local function keyControls()
                     local distance = quartz.speakers.distance - 1
                     quartz.setDistance(distance)
                     quartz.log("Distance:", quartz.speakers.distance)
+                elseif key == keys.r then
+                    local rawMode = quartz.getDecoderRawMode()
+                    quartz.setDecoderRawMode(not rawMode)
+                    quartz.log("Switch raw mode:", rawMode)
                 end
             end
         end
@@ -93,8 +97,6 @@ local function guiControls()
     ui:label(1, h, "Q " .. quartz.version, {
         text = colors.gray
     })
-
-    ui:label(1, 1, "GUI WIP")
 
     local exitButton = ui:button(w, 1, "x", {
         w = 1,
@@ -162,6 +164,32 @@ local function guiControls()
         end
     end
 
+    local rawModeButton = ui:button(1, 1, "RAW", {
+        w = 3,
+        buttonBg = colors.black,
+        buttonFg = colors.gray,
+        buttonBgActive = colors.black,
+        buttonFgActive = colors.white,
+    })
+
+    local function updateRawButton()
+        rawModeButton.colors.buttonFg = quartz.getDecoderRawMode() and colors.green or colors.gray
+        rawModeButton.redraw()
+    end
+
+    local function setRawMode(mode)
+        quartz.setDecoderRawMode(mode)
+        updateRawButton()
+    end
+
+    rawModeButton.onclick = function(self)
+        local mode = not quartz.getDecoderRawMode()
+        setRawMode(mode)
+        settings.set("quartz.raw", mode)
+    end
+
+    updateRawButton()
+
     while true do
         local ev = { os.pullEvent() }
         if ev[1] == "quartz_play" then
@@ -179,6 +207,8 @@ local function guiControls()
             artistLabel.setText("")
             titleLabel.setText("No disk")
             albumLabel.setText("Insert a disk with an audio track")
+        elseif ev[1] == "mouse_click" or ev[1] == "key_up" then
+            updateRawButton()
         end
     end
 end

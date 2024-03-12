@@ -5,10 +5,21 @@
 local expect = require "cc.expect".expect
 
 local byte, floor, band, rshift = string.byte, math.floor, bit32.band, bit32.arshift
+
 local PREC = 10
 local PREC_POW = 2 ^ PREC
 local PREC_POW_HALF = 2 ^ (PREC - 1)
 local STRENGTH_MIN = 2 ^ (PREC - 8 + 1)
+
+local rawMode = false
+local function set_raw_mode(enable)
+    expect(1, enable, "boolean")
+    rawMode = enable
+end
+
+local function get_raw_mode()
+    return rawMode
+end
 
 local function make_predictor()
     local charge, strength, previous_bit = 0, 0, false
@@ -30,12 +41,12 @@ local function make_predictor()
         return charge
     end
 end
-local function make_raw_decoder()
+local function make_decoder()
     local predictor = make_predictor()
     local low_pass_charge = 0
     local previous_charge, previous_bit = 0, false
 
-    return function (input)
+    return function(input)
         expect(1, input, "string")
 
         local output, output_n = {}, 0
@@ -43,20 +54,24 @@ local function make_raw_decoder()
             local input_byte = byte(input, i)
             for _ = 1, 8 do
                 local current_bit = band(input_byte, 1) ~= 0
-                local charge = predictor(current_bit)
+                output_n = output_n + 1
+                if rawMode then
+                    output[output_n] = current_bit and 127 or -128
+                else
+                    local charge = predictor(current_bit)
 
-                --[[local antijerk = charge
-                if current_bit ~= previous_bit then
-                    antijerk = floor((charge + previous_charge + 1) / 2)
+                    local antijerk = charge
+                    if current_bit ~= previous_bit then
+                        antijerk = floor((charge + previous_charge + 1) / 2)
+                    end
+
+                    previous_charge, previous_bit = charge, current_bit
+
+                    low_pass_charge = low_pass_charge + floor(((antijerk - low_pass_charge) * 140 + 0x80) / 256)
+
+                    output[output_n] = low_pass_charge
                 end
 
-                previous_charge, previous_bit = charge, current_bit
-
-                low_pass_charge = low_pass_charge + floor(((antijerk - low_pass_charge) * 140 + 0x80) / 256)]]
-
-                output_n = output_n + 1
-                output[output_n] = charge
-                --output[output_n] = low_pass_charge
 
                 input_byte = rshift(input_byte, 1)
             end
@@ -67,5 +82,7 @@ local function make_raw_decoder()
 end
 
 return {
-    make_raw_decoder = make_raw_decoder
+    make_decoder = make_decoder,
+    set_raw_mode = set_raw_mode,
+    get_raw_mode = get_raw_mode,
 }

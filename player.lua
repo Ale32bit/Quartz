@@ -57,7 +57,7 @@ settings.define("quartz.raw", {
 })
 
 local quartz = {
-    version = "0.5.1",
+    version = "0.5.2",
     modules = {},
     drivers = {},
     args = table.pack(...),
@@ -114,7 +114,6 @@ quartz.log("Quartz Player " .. quartz.version .. " by AlexDevs")
 quartz.log("https://github.com/Ale32bit/Quartz")
 
 local UI = require("quartz.lib.ui")
-local dfpwm = require("cc.audio.dfpwm")
 local rawDfpwm = require("quartz.lib.rawDfpwm")
 
 local speakers = {
@@ -165,11 +164,18 @@ else
 end
 
 function quartz.make_decoder()
-    if settings.get("quartz.raw") then
-        return rawDfpwm.make_raw_decoder()
-    end
-    return dfpwm.make_decoder()
+    return rawDfpwm.make_decoder()
 end
+
+function quartz.setDecoderRawMode(enable)
+    rawDfpwm.set_raw_mode(enable)
+end
+
+function quartz.getDecoderRawMode()
+    return rawDfpwm.get_raw_mode()
+end
+
+quartz.setDecoderRawMode(settings.get("quartz.raw", false))
 
 quartz.log("Loading playback drivers...")
 
@@ -321,7 +327,7 @@ function quartz.exit()
     running = false
     quartz.guiWindow.setVisible(false)
     quartz.stop(true)
-    term.redirect(current)
+    term.redirect(quartz.termWindow)
     term.setBackgroundColor(colors.black)
     term.setTextColor(colors.white)
     term.clear()
@@ -356,6 +362,9 @@ quartz.log("Press F1 to toggle the log screen")
 local event = {}
 while running do
     for i, thread in pairs(tasks) do
+        if not running then
+            break
+        end
         if coroutine.status(thread) == "dead" then
             tasks[i] = nil
             filters[i] = nil
