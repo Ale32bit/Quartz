@@ -54,12 +54,11 @@ local function make_decoder()
             local input_byte = byte(input, i)
             for _ = 1, 8 do
                 local current_bit = band(input_byte, 1) ~= 0
+                local charge = predictor(current_bit)
                 output_n = output_n + 1
                 if rawMode then
                     output[output_n] = current_bit and 127 or -128
                 else
-                    local charge = predictor(current_bit)
-
                     local antijerk = charge
                     if current_bit ~= previous_bit then
                         antijerk = floor((charge + previous_charge + 1) / 2)
