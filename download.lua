@@ -5,6 +5,7 @@ local files = {
     "quartz/lib/mdfpwm.lua",
     "quartz/lib/rawDfpwm.lua",
     "quartz/lib/urilist.lua",
+    "quartz/lib/memorystream.lua",
     "quartz/drivers/dfpwm.lua",
     "quartz/drivers/mdfpwm.lua",
     "quartz/modules/diskDrive.lua",
