@@ -45,7 +45,7 @@ settings.define("quartz.distance", {
 })
 
 settings.define("quartz.loop", {
-    description = "Restart track when it ends",
+    description = "Restart track or playlist when it ends",
     default = true,
     type = "boolean"
 })
@@ -57,7 +57,7 @@ settings.define("quartz.raw", {
 })
 
 local quartz = {
-    version = "0.5.3",
+    version = "0.6.0",
     modules = {},
     drivers = {},
     args = table.pack(...),
@@ -136,7 +136,7 @@ end
 if not speakers.left and not speakers.right and not speakers.distributedMode then
     printError("The configured speakers could not be found.")
     print(
-    "Configure the speakers by setting the peripheral names to the settings \"quartz.left\" and/or \"quartz.right\" with the \"set\" command.")
+        "Configure the speakers by setting the peripheral names to the settings \"quartz.left\" and/or \"quartz.right\" with the \"set\" command.")
     return
 end
 
@@ -290,7 +290,7 @@ function quartz.setDistance(dist)
     os.queueEvent("quartz_distance", dist)
 end
 
-function quartz.loadDriver(handle, name, source)
+function quartz.loadDriver(handle, name, source, altMeta)
     if not source then
         if debug and debug.getinfo then
             local debugSource = debug.getinfo(2, "S").source
@@ -316,7 +316,7 @@ function quartz.loadDriver(handle, name, source)
 
     local comp = compatibleDrivers[1]
     if comp then
-        local track = comp.driver.new(handle, name, quartz.speakers, quartz.make_decoder)
+        local track = comp.driver.new(handle, name, quartz.speakers, quartz.make_decoder, altMeta or {})
         quartz.loadTrack(track, source)
         return true
     end
@@ -356,8 +356,11 @@ quartz.addTask(function()
     end
 end)
 
-quartz.log("Ready")
-quartz.log("Press F1 to toggle the log screen")
+quartz.addTask(function()
+    quartz.log("Ready")
+    quartz.log("Press F1 to toggle the log screen")
+    os.queueEvent("quartz_ready")
+end)
 
 local event = {}
 while running do

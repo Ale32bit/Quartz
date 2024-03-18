@@ -120,7 +120,7 @@ local function guiControls()
 
     progressBar.onclick = function(self, level)
         if quartz.track then
-            local at = quartz.trackMeta.length * level
+            local at = math.floor(quartz.trackMeta.length * level)
             quartz.track:setPosition(at)
         end
     end

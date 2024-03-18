@@ -1,5 +1,6 @@
 local UI = require("quartz.lib.ui")
 local uriList = require("quartz.lib.urilist")
+local memoryStream = require("quartz.lib.memorystream")
 local quartz
 local ui
 local streamUi
@@ -28,18 +29,56 @@ local function streamUrilist(list, meta)
     repeat
         local streamUrl, streamType = resolveUrl(uri)
         if streamType == "mdfpwm" then
-            streamUrl = streamUrl .. "&album=" .. textutils.urlEncode(meta.album) .. "&artist=" .. textutils.urlEncode(meta.artist)
+            streamUrl = streamUrl ..
+            "&album=" .. textutils.urlEncode(meta.album) .. "&artist=" .. textutils.urlEncode(meta.artist)
         end
 
         local h, err = http.get(streamUrl, nil, true)
         if h then
-            quartz.loadDriver(h, "uri." .. streamType)
+            local ms = memoryStream(true)
+            ms.write(h.readAll())
+            ms.seek("set", 0)
+            h.close()
+            quartz.loadDriver(ms, "uri." .. streamType)
         end
 
         os.pullEvent("quartz_driver_end")
 
         uri = table.remove(list, 1)
     until uri == nil
+end
+
+local function autoloop()
+    while true do
+        local ev = {os.pullEvent()}
+        if ev[1] == "quartz_driver_end" and quartz.trackSource == "stream" then
+            if settings.get("quartz.loop") then
+                quartz.play()
+            end
+        end
+    end
+end
+
+local function download(url, streamType)
+    local hr, err = http.get(url, nil, true)
+    if hr then
+        if streamType == "urilist" then
+            local list, meta = uriList.parse(hr.readAll())
+            hr.close()
+
+            quartz.addTask(function()
+                streamUrilist(list, meta)
+            end)
+        else
+            local ms = memoryStream(true)
+            ms.write(hr.readAll())
+            ms.seek("set", 0)
+
+            hr.close()
+            quartz.loadDriver(ms, "stream." .. streamType, "stream")
+        end
+    end
+    return hr, err
 end
 
 local function gui()
@@ -86,18 +125,8 @@ local function gui()
                 term.setTextColor(colors.white)
                 term.setBackgroundColor(colors.black)
                 print("Downloading...")
-                local hr, err = http.get(url, nil, true)
+                local hr, err = download(url, streamType)
                 if hr then
-                    if streamType == "urilist" then
-                        local list, meta = uriList.parse(hr.readAll())
-                        hr.close()
-
-                        quartz.addTask(function()
-                            streamUrilist(list, meta)
-                        end)
-                    else
-                        quartz.loadDriver(hr, "stream." .. streamType)
-                    end
                     exit()
                 else
                     term.setCursorPos(1, 4)
@@ -105,8 +134,19 @@ local function gui()
                     term.setBackgroundColor(colors.black)
                     printError(err)
                 end
+                
             end
         end)
+    end
+end
+
+local function onReady()
+    os.pullEvent("quartz_ready")
+
+    local trackUrl = quartz.args[1]
+    if trackUrl and http.checkURL(trackUrl) then
+        local url, streamType = resolveUrl(trackUrl)
+        download(url, streamType)
     end
 end
 
@@ -115,6 +155,9 @@ local function init(q)
     ui = quartz.ui
 
     quartz.addTask(gui)
+    quartz.addTask(autoloop)
+
+    quartz.addTask(onReady)
 end
 
 return init

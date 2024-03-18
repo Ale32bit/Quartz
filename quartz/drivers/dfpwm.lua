@@ -54,27 +54,27 @@ function Track:run()
             os.pullEvent("quartz_play")
         end
         local chunk = self.data:sub((self.position + 1), self.position + self.blockSize)
-        if not chunk or chunk == "" then
+        if chunk and chunk ~= "" then
+            local sample = self.decoder(chunk)
+            while self.state ~= "paused" and not self.disposed and not playAudio(self.speakers, sample) do
+                os.pullEvent("speaker_audio_empty")
+                sleep(0.5)
+            end
+            self.position = self.position + self.blockSize
+        else
             os.pullEvent("speaker_audio_empty")
             sleep(0.5)
+            self:stop()
             os.queueEvent("quartz_driver_end")
-            break
         end
-
-        local sample = self.decoder(chunk)
-        while self.state ~= "paused" and not self.disposed and not playAudio(self.speakers, sample) do
-            os.pullEvent("speaker_audio_empty")
-            sleep(0.5)
-        end
-        self.position = self.position + self.blockSize
     end
 end
 
 function Track:getMeta()
     return {
-        artist = "Unknown artist",
-        title = "Unknown title",
-        album = "Unknown album",
+        artist = self.altMeta.artist or "Unknown artist",
+        title = self.altMeta.title or "Unknown title",
+        album = self.altMeta.album or "Unknown album",
         size = self.size,
         length = self.size / 6000,
     }
@@ -124,7 +124,7 @@ function Track:dispose()
     self.disposed = true
 end
 
-local function new(handle, name, speakers, decoder)
+local function new(handle, name, speakers, decoder, altMeta)
     make_decoder = decoder
     local data = handle.readAll()
     handle.close()
@@ -140,6 +140,7 @@ local function new(handle, name, speakers, decoder)
         speakers = speakers,
         size = size,
         disposed = false,
+        altMeta = altMeta or {},
     }
 
     setmetatable(track, { __index = Track })

@@ -63,10 +63,9 @@ local function stopAudio(speakers)
     end
 
     speakers.left.stop()
-    if speakers.isMono then
-        return
+    if not speakers.isMono then
+        speakers.right.stop()
     end
-    speakers.right.stop()
 end
 
 local function createDecoders()
@@ -82,30 +81,31 @@ function Track:run()
             self.index = 1
         end
         local sample = self.audio.getSample(self.index)
-        if not sample then
-            os.pullEvent("speaker_audio_empty")
-            sleep(0.5)
-            os.queueEvent("quartz_driver_end")
-            break
-        end
-        local decoded = {
-            left = self.leftDecoder(sample.left),
-            right = self.rightDecoder(sample.right),
-        }
-        while self.state ~= "paused" and not self.disposed and not playAudio(self.speakers, decoded) do
-            os.pullEvent("speaker_audio_empty")
-            sleep(0.5)
-        end
+        if sample then
+            local decoded = {
+                left = self.leftDecoder(sample.left),
+                right = self.rightDecoder(sample.right),
+            }
+            while self.state ~= "paused" and not self.disposed and not playAudio(self.speakers, decoded) do
+                os.pullEvent("speaker_audio_empty")
+                sleep(0.5)
+            end
 
-        self.index = self.index + 1
+            self.index = self.index + 1
+        else
+            os.pullEvent("speaker_audio_empty")
+            sleep(0.5)
+            self:stop()
+            os.queueEvent("quartz_driver_end")
+        end
     end
 end
 
 function Track:getMeta()
     return {
-        artist = self.audio.artist,
-        title = self.audio.title,
-        album = self.audio.album,
+        artist = self.altMeta.artist or self.audio.artist,
+        title = self.altMeta.title or self.audio.title,
+        album = self.altMeta.album or self.audio.album,
         size = self.audio.length * 12000,
         length = self.audio.length,
     }
@@ -127,10 +127,13 @@ function Track:setPosition(pos)
         pos = self.audio.length
     end
     self.index = pos + 1
-    local wasPaused = self.state == "paused"
-    self:pause()
+    local wasPlaying = self.state ~= "paused"
+    self.state = "paused"
+    os.queueEvent("quartz_pause")
+    stopAudio(self.speakers)
     self.leftDecoder, self.rightDecoder = createDecoders()
-    if not wasPaused then
+    sleep(0)
+    if wasPlaying then
         self:play()
     end
 end
@@ -143,12 +146,13 @@ end
 
 function Track:pause()
     self.state = "paused"
-    os.queueEvent("quartz_pause")
     self.index = self.index - 2
     if self.index < 1 then
         self.index = 1
     end
+    os.queueEvent("quartz_pause")
     stopAudio(self.speakers)
+    self.leftDecoder, self.rightDecoder = createDecoders()
 end
 
 function Track:stop()
@@ -164,9 +168,12 @@ function Track:dispose()
     self.handle.close()
 end
 
-local function new(handle, name, speakers, decoder)
+local function new(handle, name, speakers, decoder, altMeta)
     make_decoder = decoder
-    local audio = mdfpwm.parse(handle)
+    local audio, err = mdfpwm.parse(handle)
+    if not audio then
+        error(err, 2)
+    end
 
     local track = {
         state = "paused",
@@ -177,6 +184,7 @@ local function new(handle, name, speakers, decoder)
         audio = audio,
         index = 1,
         disposed = false,
+        altMeta = altMeta or {},
     }
 
     track.leftDecoder, track.rightDecoder = createDecoders()

@@ -1,4 +1,5 @@
 local uriList = require("quartz.lib.urilist")
+local memoryStream = require("quartz.lib.memorystream")
 local drive = peripheral.find("drive")
 local quartz
 local w, h
@@ -34,7 +35,11 @@ local function streamUrilist(list, meta)
 
         local h, err = http.get(streamUrl, nil, true)
         if h then
-            quartz.loadDriver(h, "uri." .. streamType)
+            local ms = memoryStream(true)
+            ms.write(h.readAll())
+            ms.seek("set", 0)
+            h.close()
+            quartz.loadDriver(ms, "uri." .. streamType)
         end
 
         os.pullEvent("quartz_driver_end")
@@ -67,7 +72,25 @@ local function tryLoadDriveTrack()
             return
         end
 
-        if quartz.loadDriver(handle, file, "diskDrive") then
+        local altMeta = {}
+        local diskLabel = drive.getDiskLabel()
+        if diskLabel then
+            altMeta.artist, altMeta.title, altMeta.album = diskLabel:match("^(.+)%s*%-%s*(.+)%s*%((.+)%)$")
+            if not altMeta.artist then
+                altMeta.artist, altMeta.title = diskLabel:match("^(.+)%s*%-%s*(.+)$")
+            end
+            if altMeta.artist then
+                altMeta.artist = altMeta.artist:gsub("%s+", "")
+                altMeta.title = altMeta.title:gsub("%s+", "")
+                altMeta.album = altMeta.album and altMeta.album:gsub("%s+", "") or ""
+            else
+                altMeta.title = diskLabel:gsub("%s+", "")
+                altMeta.artist = ""
+                altMeta.album = ""
+            end
+        end
+
+        if quartz.loadDriver(handle, file, "diskDrive", altMeta) then
             return
         end
     end
