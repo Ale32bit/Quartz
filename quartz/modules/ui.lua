@@ -1,4 +1,5 @@
 local quartz, ui
+local module = {}
 
 local function keyControls()
     while true do
@@ -200,9 +201,19 @@ local function guiControls()
             playButton.redraw()
         elseif ev[1] == "quartz_load" then
             local meta = ev[2]
-            artistLabel.setText(meta.artist)
-            titleLabel.setText(meta.title)
-            albumLabel.setText(meta.album)
+            local artist, title, album = meta.artist, meta.title, meta.album
+            if artist and #artist >= w - 5 then
+                artist = artist:sub(-(w - 8)) .. "..."
+            end
+            if title and #title >= w - 5 then
+                title = title:sub(-(w - 8)) .. "..."
+            end
+            if album and #album >= w - 5 then
+                album = album:sub(-(w - 8)) .. "..."
+            end
+            artistLabel.setText(artist)
+            titleLabel.setText(title)
+            albumLabel.setText(album)
         elseif ev[1] == "quartz_dispose" then
             artistLabel.setText("")
             titleLabel.setText("No disk")
@@ -213,7 +224,7 @@ local function guiControls()
     end
 end
 
-local function init(q)
+function module.init(q)
     quartz = q
     ui = quartz.ui
 
@@ -226,4 +237,4 @@ local function init(q)
     end)
 end
 
-return init
+return module

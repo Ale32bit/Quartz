@@ -1,79 +1,37 @@
 local uriList = require("quartz.lib.urilist")
-local memoryStream = require("quartz.lib.memorystream")
-local drive = peripheral.find("drive")
 local quartz
-local w, h
 local playlistMode = false
+local moduleUrilist
 
-local function resolveUrl(url)
-    local streamType = url:match("%.(m?dfpwm)$")
-    if not streamType then
-        if url:match("%.urilist$") then
-            streamType = "urilist"
-        else
-            local title = url
-            if #title >= w - 5 then
-                title = title:sub(-(w - 8)) .. "..."
-            end
-            url = "https://cc.alexdevs.me/mdfpwm?url=" ..
-                textutils.urlEncode(url) .. "&title=" .. textutils.urlEncode(title)
-            streamType = "mdfpwm"
-        end
-    end
-    return url, streamType
-end
-
-local function streamUrilist(list, meta)
-    playlistMode = true
-    local uri = table.remove(list, 1)
-    repeat
-        local streamUrl, streamType = resolveUrl(uri)
-        if streamType == "mdfpwm" then
-            streamUrl = streamUrl ..
-            "&album=" .. textutils.urlEncode(meta.album) .. "&artist=" .. textutils.urlEncode(meta.artist)
-        end
-
-        local h, err = http.get(streamUrl, nil, true)
-        if h then
-            local ms = memoryStream(true)
-            ms.write(h.readAll())
-            ms.seek("set", 0)
-            h.close()
-            quartz.loadDriver(ms, "uri." .. streamType)
-        end
-
-        os.pullEvent("quartz_driver_end")
-
-        uri = table.remove(list, 1)
-    until uri == nil
-    playlistMode = false
-end
+local module = {
+    drive = peripheral.find("drive")
+}
 
 local function tryLoadDriveTrack()
-    if not drive then
+    if not module.drive then
         return
     end
 
-    if not drive.hasData() then
+    if not module.drive.hasData() then
         return
     end
 
-    local diskPath = drive.getMountPath()
+    local diskPath = module.drive.getMountPath()
     for i, file in ipairs(fs.list(diskPath)) do        
         local handle = fs.open(fs.combine(diskPath, file), "rb")
 
-        if file:match("%.urilist$") then
+        if file:match("%.urilist$") and moduleUrilist and moduleUrilist.playUrilist then
             local list, meta = uriList.parse(handle.readAll())
             handle.close()
 
             quartz.addTask(function()
-                streamUrilist(list, meta)
+                moduleUrilist.playUrilist(list, meta)
             end)
             return
         end
 
         local altMeta = {}
-        local diskLabel = drive.getDiskLabel()
+        local diskLabel = module.drive.getDiskLabel()
         if diskLabel then
             altMeta.artist, altMeta.title, altMeta.album = diskLabel:match("^(.+)%s*%-%s*(.+)%s*%((.+)%)$")
             if not altMeta.artist then
@@ -100,25 +58,25 @@ local function driveLoader()
     while true do
         local ev = { os.pullEvent() }
         if ev[1] == "disk" then
-            drive = peripheral.wrap(ev[2])
+            module.drive = peripheral.wrap(ev[2])
             -- This event is fired on startup, somehow, without interacting with the drive
             -- doesn't happen in later versions
             if os.clock() > 1 then
                 tryLoadDriveTrack()
             end
-        elseif ev[1] == "disk_eject" and quartz.trackSource == "diskDrive" and drive and ev[2] == peripheral.getName(drive) then
+        elseif ev[1] == "disk_eject" and quartz.trackSource == "diskDrive" and module.drive and ev[2] == peripheral.getName(module.drive) then
             quartz.stop(true)
         elseif ev[1] == "quartz_driver_end" and not playlistMode then
-            if settings.get("quartz.loop") and quartz.trackSource == "diskDrive" and drive then
+            if settings.get("quartz.loop") and quartz.trackSource == "diskDrive" and module.drive then
                 tryLoadDriveTrack()
             end
         end
     end
 end
 
-local function init(q)
-    quartz = q
-    w, h = quartz.termWindow.getSize()
+function module.init(context)
+    quartz = context
+    moduleUrilist = quartz.modules["urilist"]
 
     quartz.addTask(driveLoader)
     quartz.addTask(function()
@@ -129,4 +87,4 @@ local function init(q)
     end)
 end
 
-return init
+return module

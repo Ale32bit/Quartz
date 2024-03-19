@@ -11,6 +11,7 @@ local files = {
     "quartz/modules/diskDrive.lua",
     "quartz/modules/ui.lua",
     "quartz/modules/stream.lua",
+    "quartz/modules/urilist.lua",
 }
 
 local function download(url, path)

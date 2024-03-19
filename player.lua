@@ -57,7 +57,7 @@ settings.define("quartz.raw", {
 })
 
 local quartz = {
-    version = "0.6.0",
+    version = "0.6.1",
     modules = {},
     drivers = {},
     args = table.pack(...),
@@ -335,11 +335,15 @@ function quartz.exit()
 end
 
 quartz.log("Loading modules...")
-for name, moduleInit in pairs(quartz.modules) do
+for name, moduleContext in pairs(quartz.modules) do
     quartz.log("Loading module", name)
-    local ok, err = pcall(moduleInit, quartz)
-    if not ok then
-        quartz.logError(err)
+    local init = (type(moduleContext) == "table" and moduleContext.init)
+        or (type(moduleContext) == "function" and moduleContext)
+    if type(init) == "function" then
+        local ok, err = pcall(init, quartz)
+        if not ok then
+            quartz.logError(err)
+        end
     end
 end
 
