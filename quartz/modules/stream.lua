@@ -9,13 +9,19 @@ local moduleUrilist
 
 local module = {}
 
+settings.define("quartz.stream.server", {
+    description = "Server URL of the conversion service. No trailing slash.",
+    default = "https://cc.alexdevs.me",
+    type = "string"
+})
+
 local function resolveUrl(url)
     local streamType = url:match("%.(m?dfpwm)$")
     if not streamType then
         if url:match("%.urilist$") then
             streamType = "urilist"
         else
-            url = "https://cc.alexdevs.me/mdfpwm?url=" ..
+            url = settings.get("quartz.stream.server") .. "/mdfpwm?url=" ..
                 textutils.urlEncode(url) .. "&title=" .. textutils.urlEncode(url)
             streamType = "mdfpwm"
         end

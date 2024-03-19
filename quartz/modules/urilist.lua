@@ -8,7 +8,7 @@ local function resolveUrl(url)
         if url:match("%.urilist$") then
             streamType = "urilist"
         else
-            url = "https://cc.alexdevs.me/mdfpwm?url=" ..
+            url = settings.get("quartz.stream.server") .. "/mdfpwm?url=" ..
                 textutils.urlEncode(url) .. "&title=" .. textutils.urlEncode(url)
             streamType = "mdfpwm"
         end

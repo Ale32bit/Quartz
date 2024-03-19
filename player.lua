@@ -57,7 +57,7 @@ settings.define("quartz.raw", {
 })
 
 local quartz = {
-    version = "0.6.1",
+    version = "0.6.2",
     modules = {},
     drivers = {},
     args = table.pack(...),
