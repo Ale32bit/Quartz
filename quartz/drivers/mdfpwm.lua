@@ -39,7 +39,7 @@ local function playAudio(speakers, sample)
         return ok
     end
 
-    if speakers.isMono then
+    if speakers.isMono and #sample.left + #sample.right > 0 then
         return speakers.left.playAudio(getAverage(sample.left, sample.right), speakers.distance)
     end
 
@@ -88,7 +88,6 @@ function Track:run()
             }
             while self.state ~= "paused" and not self.disposed and not playAudio(self.speakers, decoded) do
                 os.pullEvent("speaker_audio_empty")
-                sleep(0.5)
             end
 
             self.index = self.index + 1

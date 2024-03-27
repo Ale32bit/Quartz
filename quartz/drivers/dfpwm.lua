@@ -26,6 +26,10 @@ local function playAudio(speakers, sample)
         return ok
     end
 
+    if #sample == 0 then
+        return
+    end
+
     if speakers.isMono then
         return speakers.left.playAudio(sample, speakers.distance)
     end
@@ -58,7 +62,6 @@ function Track:run()
             local sample = self.decoder(chunk)
             while self.state ~= "paused" and not self.disposed and not playAudio(self.speakers, sample) do
                 os.pullEvent("speaker_audio_empty")
-                sleep(0.5)
             end
             self.position = self.position + self.blockSize
         else
