@@ -1,23 +1,12 @@
 local make_decoder
-local mmin, mmax = math.min, math.max
 
 local driverType = "dfpwm"
 
 local Track = {}
 
-local function clamp(val, min, max)
-    return mmax(min, mmin(max, val))
-end
 
-local function adjustVolume(buffer, volume)
-    for i = 1, #buffer do
-        buffer[i] = clamp(buffer[i] * volume, -128, 127)
-    end
-end
 
 local function playAudio(speakers, sample)
-    adjustVolume(sample, speakers.volume)
-
     if speakers.distributedMode then
         local ok = true
         for i, speaker in ipairs(speakers.distributedSpeakers) do
@@ -59,7 +48,7 @@ function Track:run()
         end
         local chunk = self.data:sub((self.position + 1), self.position + self.blockSize)
         if chunk and chunk ~= "" then
-            local sample = self.decoder(chunk)
+            local sample = self.decoder(chunk, self.speakers.volume)
             while self.state ~= "paused" and not self.disposed and not playAudio(self.speakers, sample) do
                 os.pullEvent("speaker_audio_empty")
             end

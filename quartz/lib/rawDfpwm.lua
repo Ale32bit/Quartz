@@ -11,6 +11,11 @@ local PREC_POW = 2 ^ PREC
 local PREC_POW_HALF = 2 ^ (PREC - 1)
 local STRENGTH_MIN = 2 ^ (PREC - 8 + 1)
 
+local mmin, mmax = math.min, math.max
+local function clamp(val, min, max)
+    return mmax(min, mmin(max, val))
+end
+
 local rawMode = false
 local function set_raw_mode(enable)
     expect(1, enable, "boolean")
@@ -46,8 +51,9 @@ local function make_decoder()
     local low_pass_charge = 0
     local previous_charge, previous_bit = 0, false
 
-    return function(input)
+    return function(input, volume)
         expect(1, input, "string")
+        volume = expect(2, volume, "number", "nil") or 1.0
 
         local output, output_n = {}, 0
         for i = 1, #input do
@@ -68,10 +74,9 @@ local function make_decoder()
 
                     low_pass_charge = low_pass_charge + floor(((antijerk - low_pass_charge) * 140 + 0x80) / 256)
 
-                    output[output_n] = low_pass_charge
+                    output[output_n] = clamp(low_pass_charge * volume, -128, 127)
                 end
-
-
+                
                 input_byte = rshift(input_byte, 1)
             end
         end

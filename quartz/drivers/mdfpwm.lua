@@ -5,11 +5,6 @@ local mmin, mmax = math.min, math.max
 local driverType = "mdfpwm"
 
 local Track = {}
-
-local function clamp(val, min, max)
-    return mmax(min, mmin(max, val))
-end
-
 local function getAverage(left, right)
     local avg = {}
     for i = 1, #left do
@@ -18,16 +13,7 @@ local function getAverage(left, right)
     return avg
 end
 
-local function adjustVolume(buffer, volume)
-    for i = 1, #buffer do
-        buffer[i] = clamp(buffer[i] * volume, -128, 127)
-    end
-end
-
 local function playAudio(speakers, sample)
-    adjustVolume(sample.left, speakers.volume)
-    adjustVolume(sample.right, speakers.volume)
-
     if speakers.distributedMode then
         local mono = getAverage(sample.left, sample.right)
         local ok = true
@@ -83,8 +69,8 @@ function Track:run()
         local sample = self.audio.getSample(self.index)
         if sample then
             local decoded = {
-                left = self.leftDecoder(sample.left),
-                right = self.rightDecoder(sample.right),
+                left = self.leftDecoder(sample.left, self.speakers.volume),
+                right = self.rightDecoder(sample.right, self.speakers.volume),
             }
             while self.state ~= "paused" and not self.disposed and not playAudio(self.speakers, decoded) do
                 os.pullEvent("speaker_audio_empty")
