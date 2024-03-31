@@ -366,6 +366,26 @@ quartz.addTask(function()
     os.queueEvent("quartz_ready")
 end)
 
+quartz.addTask(function()
+    local counter = 0
+    while true do
+        if not quartz.track or quartz.track.state == "paused" then
+            os.pullEvent("quartz_play")
+        end
+        parallel.waitForAny(function()
+            sleep(1)
+        counter = counter + 1
+        end, function()
+            os.pullEvent("quartz_pause")
+        end, function()
+            os.pullEvent("quartz_driver_end")
+            counter = 0
+        end)
+        
+        --quartz.log(counter)
+    end
+end)
+
 local event = {}
 while running do
     for i, thread in pairs(tasks) do

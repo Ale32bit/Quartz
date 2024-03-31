@@ -35,6 +35,8 @@ local function new(self, win, addTask)
         end
     end
 
+    ui.redraw()
+
     return setmetatable(ui, { __index = UI })
 end
 
