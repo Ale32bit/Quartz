@@ -269,23 +269,13 @@ function quartz.loadTrack(tr, src)
 end
 
 function quartz.setVolume(vol)
-    if vol > 1 then
-        vol = 1
-    end
-    if vol < 0 then
-        vol = 0
-    end
+    vol = math.min(math.max(vol, 0), 5)
     speakers.volume = vol
     os.queueEvent("quartz_volume", vol)
 end
 
 function quartz.setDistance(dist)
-    if dist > 128 then
-        dist = 128
-    end
-    if dist < 0 then
-        dist = 0
-    end
+    dist = math.min(math.max(dist, 1), 3)
     speakers.distance = dist
     os.queueEvent("quartz_distance", dist)
 end
