@@ -45,3 +45,4 @@ Quartz can be configured with the use of the `set` command.
 | `quartz.distributed`   | Play mono audio on all speakers attached to the network. This setting disables `quartz.left` and `quartz.right`. Fine tune `quartz.distance` for best coverage. | boolean | `false`                  |
 | `quartz.raw`           | Skip the audio filters when decoding DFPWM.                                                                                                                     | boolean | `false`                  |
 | `quartz.stream.server` | Server URL of the conversion service. No trailing slash.                                                                                                        | string  | `https://cc.alexdevs.me` |
+| `quartz.stream.navidromeShares` | Enable Navidrome shares support | boolean | `true` |
