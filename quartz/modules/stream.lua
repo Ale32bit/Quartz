@@ -15,11 +15,32 @@ settings.define("quartz.stream.server", {
     type = "string"
 })
 
+settings.define("quartz.stream.navidromeShares", {
+    description = "Enable Navidrome shares support",
+    default = true,
+    type = "boolean"
+})
+
 local function resolveUrl(url)
     local streamType = url:match("%.(m?dfpwm)$")
     if not streamType then
         if url:match("%.urilist$") then
             streamType = "urilist"
+        elseif url:match("%/share") and settings.get("quartz.stream.navidromeShares") then
+            quartz.log("Navidrome Share URL detected")
+            local htmlHandle = http.get(url)
+            local htmlString = htmlHandle.readAll()
+            htmlHandle.close()
+            local shareInfoJSON = htmlString:match('<script>window%.__SHARE_INFO__%s*=%s*"(.-)"</script>'):gsub('\\"', '"') -- god forgive me for i have sinned
+            if not shareInfoJSON then
+                error("Failed to get share info")
+            end
+            local shareInfo = textutils.unserialiseJSON(shareInfoJSON)
+            local base_url = url:match("^(https?://[^/]+)")
+
+            url = settings.get("quartz.stream.server") .. "/mdfpwm?url=" ..
+                textutils.urlEncode(base_url .. "/share/s/" .. shareInfo.tracks[1].id) .. "&title=" .. textutils.urlEncode(shareInfo.tracks[1].title)  .. "&artist=" .. textutils.urlEncode(shareInfo.tracks[1].artist) .. "&album=" .. textutils.urlEncode(shareInfo.tracks[1].album)
+            streamType = "mdfpwm"
         else
             url = settings.get("quartz.stream.server") .. "/mdfpwm?url=" ..
                 textutils.urlEncode(url) .. "&title=" .. textutils.urlEncode(url)
