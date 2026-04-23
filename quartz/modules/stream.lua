@@ -31,7 +31,7 @@ local function resolveUrl(url)
             local htmlHandle = http.get(url)
             local htmlString = htmlHandle.readAll()
             htmlHandle.close()
-            local shareInfoJSON = htmlString:match('<script>window%.__SHARE_INFO__%s*=%s*"(.-)"</script>'):gsub('\\"', '"') -- god forgive me for i have sinned
+            local shareInfoJSON = htmlString:match('window%.__SHARE_INFO__%s*=%s*"(.-)"%s*</script>'):gsub('\\"', '"') -- god forgive me for i have sinned
             if not shareInfoJSON then
                 error("Failed to get share info")
             end
