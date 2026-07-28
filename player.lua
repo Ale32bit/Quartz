@@ -122,7 +122,7 @@ local speakers = {
 }
 quartz.speakers = speakers
 
-speakers.left = speakers.left or speakers.right
+speakers.left = speakers.left or speakers.right or peripheral.find("speaker")
 speakers.right = speakers.right or speakers.left
 speakers.isMono = speakers.left == speakers.right
 speakers.volume = settings.get("quartz.volume")
@@ -374,14 +374,14 @@ quartz.addTask(function()
         end
         parallel.waitForAny(function()
             sleep(1)
-        counter = counter + 1
+            counter = counter + 1
         end, function()
             os.pullEvent("quartz_pause")
         end, function()
             os.pullEvent("quartz_driver_end")
             counter = 0
         end)
-        
+
         --quartz.log(counter)
     end
 end)
