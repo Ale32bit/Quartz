@@ -122,8 +122,14 @@ local speakers = {
 }
 quartz.speakers = speakers
 
-speakers.left = speakers.left or speakers.right or peripheral.find("speaker")
+speakers.left = speakers.left or speakers.right
 speakers.right = speakers.right or speakers.left
+
+if not speakers.left then
+    speakers.left = peripheral.find("speaker")
+    speakers.right = speakers.left
+end
+
 speakers.isMono = speakers.left == speakers.right
 speakers.volume = settings.get("quartz.volume")
 speakers.distance = settings.get("quartz.distance")
