@@ -120,6 +120,15 @@ local speakers = {
     left = peripheral.wrap(settings.get("quartz.left")),
     right = peripheral.wrap(settings.get("quartz.right")),
 }
+
+if peripheral.getType(speakers.left) ~= "speaker" then
+    speakers.left = nil
+end
+
+if peripheral.getType(speakers.right) ~= "speaker" then
+    speakers.right = nil
+end
+
 quartz.speakers = speakers
 
 speakers.left = speakers.left or speakers.right
